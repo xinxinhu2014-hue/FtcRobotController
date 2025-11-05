@@ -67,7 +67,7 @@ public class RobotOrientDrive extends OpMode {
 
         if(gamepad1.a) {
             launch.launchBall(0.7);
-            launchSpeed = launch.getlaunchRPM();
+            launchSpeed = launch.getLaunchRPM();
             telemetry.addData("Launch RPM: ", launchSpeed);
         }
         else {
@@ -75,7 +75,7 @@ public class RobotOrientDrive extends OpMode {
         }
         if(gamepad1.b) {
             launch.launchBall(0.8);
-            launchSpeed = launch.getlaunchRPM();
+            launchSpeed = launch.getLaunchRPM();
             telemetry.addData("Launch RPM: ", launchSpeed);
         }
         else {
@@ -83,7 +83,7 @@ public class RobotOrientDrive extends OpMode {
         }
         if(gamepad1.x) {
             launch.launchBall(0.9);
-            launchSpeed = launch.getlaunchRPM();
+            launchSpeed = launch.getLaunchRPM();
             telemetry.addData("Launch RPM: ", launchSpeed);
         }
         else {
@@ -91,7 +91,7 @@ public class RobotOrientDrive extends OpMode {
         }
         if(gamepad1.y) {
             launch.launchBall(1);
-            launchSpeed = launch.getlaunchRPM();
+            launchSpeed = launch.getLaunchRPM();
             telemetry.addData("Launch RPM: ", launchSpeed);
         }
         else {

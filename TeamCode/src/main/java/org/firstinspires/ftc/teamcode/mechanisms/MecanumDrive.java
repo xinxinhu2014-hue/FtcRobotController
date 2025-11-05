@@ -2,54 +2,55 @@ package org.firstinspires.ftc.teamcode.mechanisms;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+
 public class MecanumDrive {
-    private DcMotor frontLeftMotor;
-    private DcMotor frontRightMotor;
-    private DcMotor backLeftMotor;
-    private DcMotor backRightMotor;
+    private static final double TICK_PER_REV = 28 * 19.2;
+    private static final double WHEEL_CIRCUM = 4 * 3.14;
+    private static final double GEAR_RATIO = 60.0/40.0;
+
+    private final DcMotor[] wheelsMotor = new DcMotor[4];
+
 
     public void init(HardwareMap hardwareMap) {
-        frontLeftMotor = hardwareMap.dcMotor.get("frontleft");
-        frontRightMotor = hardwareMap.dcMotor.get("frontright");
-        backLeftMotor = hardwareMap.dcMotor.get("backleft");
-        backRightMotor = hardwareMap.dcMotor.get("backright");
+        wheelsMotor[0] = hardwareMap.dcMotor.get("frontleft");
+        wheelsMotor[1] = hardwareMap.dcMotor.get("frontright");
+        wheelsMotor[2] = hardwareMap.dcMotor.get("backleft");
+        wheelsMotor[3] = hardwareMap.dcMotor.get("backright");
 
-        backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        backRightMotor.setDirection(DcMotor.Direction.FORWARD);
-        frontRightMotor.setDirection(DcMotor.Direction.FORWARD);
+        wheelsMotor[0].setDirection(DcMotor.Direction.REVERSE);
+        wheelsMotor[2].setDirection(DcMotor.Direction.REVERSE);
+        wheelsMotor[1].setDirection(DcMotor.Direction.FORWARD);
+        wheelsMotor[3].setDirection(DcMotor.Direction.FORWARD);
 
-        frontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        frontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        backLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        backRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        for (DcMotor motor : wheelsMotor) {
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
     }
 
-    private void setPowers(double frontLeftPower, double frontRightPower, double backLeftPower,
-                           double backRightPower){
+    private void setPower(double[] wheelsPower) {
         double maxSpeed = 1.0;
-        maxSpeed = Math.max(maxSpeed, Math.abs(frontLeftPower));
-        maxSpeed = Math.max(maxSpeed, Math.abs(frontRightPower));
-        maxSpeed = Math.max(maxSpeed, Math.abs(backLeftPower));
-        maxSpeed = Math.max(maxSpeed, Math.abs(backRightPower));
-
-        frontLeftPower /= maxSpeed;
-        frontRightPower /= maxSpeed;
-        backLeftPower /= maxSpeed;
-        backRightPower /= maxSpeed;
-
-        frontLeftMotor.setPower(frontLeftPower);
-        frontRightMotor.setPower(frontRightPower);
-        backLeftMotor.setPower(backLeftPower);
-        backRightMotor.setPower(backRightPower);
+        for (double power : wheelsPower) {
+            maxSpeed = Math.max(maxSpeed, Math.abs(power));
+        }
+        for (int i = 0; i < 4; i++) {
+            wheelsPower[i] /= maxSpeed;
+            wheelsMotor[i].setPower(wheelsPower[i]);
+        }
     }
 
     public void drive(double forward, double right, double rotate) {
-        double frontLeftPower = forward + right + rotate;
-        double frontRightPower = forward - right - rotate;
-        double backLeftPower = forward - right + rotate;
-        double backRightPower = forward + right - rotate;
+        double[] wheelsPower = new double[4];
+        wheelsPower[0] = forward + right + rotate;
+        wheelsPower[1] = forward - right - rotate;
+        wheelsPower[2] = forward - right + rotate;
+        wheelsPower[3] = forward + right - rotate;
 
-        setPowers(frontLeftPower, frontRightPower, backLeftPower, backRightPower);
+        setPower(wheelsPower);
+    }
+
+
+    public void goStraight(double distance, double power) {
+        double targetTick = distance / WHEEL_CIRCUM / GEAR_RATIO * TICK_PER_REV;
+
     }
 }

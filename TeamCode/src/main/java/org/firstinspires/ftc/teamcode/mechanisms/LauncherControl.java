@@ -17,10 +17,12 @@ public class LauncherControl {
     }
 
     public void launchBall(double power) {
+        launchMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        launchMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         launchMotor.setPower(power);
     }
 
-    public double getlaunchRPM() {
+    public double getLaunchRPM() {
         return launchMotor.getCurrentPosition() / ticksPerRotation * 60;
     }
 }

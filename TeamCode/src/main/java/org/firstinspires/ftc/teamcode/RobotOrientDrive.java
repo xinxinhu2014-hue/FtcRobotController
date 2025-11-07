@@ -56,7 +56,7 @@ public class RobotOrientDrive extends OpMode {
 
         // activate intake
         if(gamepad1.left_bumper) {
-            intake.setIntakePower(0.6);
+            intake.setIntakePower(1.0);
         }
         else {
             intake.setIntakePower(0.0);

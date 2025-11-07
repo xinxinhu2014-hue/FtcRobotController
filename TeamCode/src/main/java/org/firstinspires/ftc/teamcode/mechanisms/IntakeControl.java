@@ -10,7 +10,7 @@ public class IntakeControl {
     public void init(HardwareMap hardwareMap) {
         intakeControl = hardwareMap.get(DcMotor.class, "intake");
         intakeControl.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        intakeControl.setDirection(DcMotorSimple.Direction.REVERSE);
+        intakeControl.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 
     public void setIntakePower(double power) {

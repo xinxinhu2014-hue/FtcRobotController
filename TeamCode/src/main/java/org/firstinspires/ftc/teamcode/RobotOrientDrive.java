@@ -20,7 +20,11 @@ public class RobotOrientDrive extends OpMode {
     LauncherControl launch = new LauncherControl();
     List<Double> barPositions = new ArrayList<>(2);
     boolean launching = false;
+    boolean lastDpadUp = false;
+    boolean lastDpadDown = false;
     double launchSpeed;
+    double shooterAdjustStep = 500;
+    double shooterTargetRPM = 7000;
     @Override
     public  void init() {
         drive.init(hardwareMap);
@@ -59,42 +63,37 @@ public class RobotOrientDrive extends OpMode {
 
         // activate intake
         if(gamepad1.left_bumper) {
-            intake.setIntakePower(1.0);
+            intake.setIntakePower(-1.0);
         }
         else {
-            intake.setIntakePower(0.0);
+            intake.setIntakePower(gamepad1.left_trigger);
         }
+
 
         // shoot
+
+        boolean dpadUp = gamepad1.dpad_up;
+        boolean dpadDown = gamepad1.dpad_down;
+        if(dpadUp && !lastDpadUp){
+            shooterTargetRPM = launch.launchRPMAdjust(shooterAdjustStep, shooterTargetRPM);
+        }
+        if(dpadDown && !lastDpadDown){
+            shooterTargetRPM = launch.launchRPMAdjust(-shooterAdjustStep, shooterTargetRPM);
+        }
+        lastDpadDown = dpadDown;
+        lastDpadUp = dpadUp;
+
         if(gamepad1.a && !launching) {
-            launch.launchBall(1.0);
+            launch.launchBall(shooterTargetRPM);
             launchSpeed = launch.getLaunchRPM();
-            telemetry.addData("Launch starts at power: ", "1.0");
-            telemetry.addData("Launch RPM: ", launchSpeed);
-            telemetry.update();
-            launching = true;
-        }
-
-        if(gamepad1.b && !launching) {
-            launch.launchBall(0.9);
-            launchSpeed = launch.getLaunchRPM();
-            telemetry.addData("Launch starts at power: ", "0.9");
-            telemetry.addData("Launch RPM: ", launchSpeed);
-            telemetry.update();
-            launching = true;
-        }
-
-        if(gamepad1.x && !launching) {
-            launch.launchBall(0.8);
-            launchSpeed = launch.getLaunchRPM();
-            telemetry.addData("Launch starts at power: ", "0.8");
-            telemetry.addData("Launch RPM: ", launchSpeed);
+            telemetry.addData("Target Shooter RPM: ", shooterTargetRPM);
+            telemetry.addData("Current Shooter RPM: ", launchSpeed);
             telemetry.update();
             launching = true;
         }
 
         if(gamepad1.y && launching) {
-            launch.launchBall(0);
+            launch.launchStop(0);
             launchSpeed = launch.getLaunchRPM();
             telemetry.addData("Launch stops at power: ", "0");
             telemetry.addData("Launch RPM: ", launchSpeed);

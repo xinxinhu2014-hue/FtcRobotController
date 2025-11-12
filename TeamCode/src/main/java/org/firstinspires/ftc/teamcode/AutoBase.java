@@ -1,21 +1,19 @@
-package org.firstinspires.ftc.teamcode;
-
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-@Autonomous
-public class AutoBase extends LinearOpMode {
+@Autonomous(name = "MainActivity", group = "Linear")
+public class MainActivity extends LinearOpMode {
 
     DcMotor fl, fr, bl, br;
     DcMotor launcher;
 
     public void runOpMode() {
-        fl = hardwareMap.get(DcMotor.class, "frontleft");
-        fr = hardwareMap.get(DcMotor.class, "frontright");
-        bl = hardwareMap.get(DcMotor.class, "backleft");
-        br = hardwareMap.get(DcMotor.class, "backright");
+        fl = hardwareMap.get(DcMotor.class, "frontLeft");
+        fr = hardwareMap.get(DcMotor.class, "frontRight");
+        bl = hardwareMap.get(DcMotor.class, "backLeft");
+        br = hardwareMap.get(DcMotor.class, "backRight");
 
         //launcherLeft = hardwareMap.get(DcMotor.class, "shooter");
         launcher = hardwareMap.get(DcMotor.class, "shooter");
@@ -36,15 +34,21 @@ public class AutoBase extends LinearOpMode {
         waitForStart();
 
         while(opModeIsActive()) {
-            forward(0.7, 1000);
-            left(0.7, 500);
+            forward(0.8, 1000);
+            turnLeft(1, 730);
+            forward(0.8, 350);
+            servo(1, 100);
             launch(1, 5000);
-            servo(0.9, 500);
+            servo(1, 100);
             launch(1, 5000);
-            reverse(0.6, 500);
-            
-            
-            
+            servo(1, 100);
+            launch(1, 5000);
+            backward(0.7, 100);
+
+
+
+
+
         }
     }
 
@@ -66,6 +70,8 @@ public class AutoBase extends LinearOpMode {
 
     public void forward(double power, long ms) { drive(power, power, power, power, ms); }
     public void backward(double power, long ms) { drive(-power, -power, -power, -power, ms); }
+    public void launch(double power, long ms) { drive(-power, -power, -power, -power, ms); }
+    public void servo(double power, long ms) { drive(-power, -power, -power, -power, ms); }
     public void strafeLeft(double power, long ms) { drive(-power, power, power, -power, ms); }
     public void strafeRight(double power, long ms) { drive(power, -power, -power, power, ms); }
     public void turnRight(double power, long ms) { drive(power, -power, power, -power, ms); }

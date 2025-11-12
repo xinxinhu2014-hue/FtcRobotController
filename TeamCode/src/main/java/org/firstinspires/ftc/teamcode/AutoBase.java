@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-@Autonomous(name = "MainActivity", group = "Linear")
+@Autonomous(name = "AutoBase", group = "Linear")
 public class MainActivity extends LinearOpMode {
 
     DcMotor fl, fr, bl, br;
@@ -37,16 +37,15 @@ public class MainActivity extends LinearOpMode {
         waitForStart();
 
         while(opModeIsActive()) {
-            forward(0.8, 1000);
             turnLeft(1, 730);
-            forward(0.8, 350);
-            servo(1, 100);
             launch(1, 5000);
             servo(1, 100);
             launch(1, 5000);
             servo(1, 100);
             launch(1, 5000);
-            backward(0.7, 100);
+            servo(1, 100);
+            launch(1, 5000);
+            forward(1, 1000);
 
 
 

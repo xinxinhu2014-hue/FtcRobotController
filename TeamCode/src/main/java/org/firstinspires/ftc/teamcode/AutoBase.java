@@ -7,16 +7,16 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @Autonomous(name = "AutoBase", group = "Linear")
-public class MainActivity extends LinearOpMode {
+public class AutoBase extends LinearOpMode {
 
     DcMotor fl, fr, bl, br;
     DcMotor launcher;
 
     public void runOpMode() {
-        fl = hardwareMap.get(DcMotor.class, "frontLeft");
-        fr = hardwareMap.get(DcMotor.class, "frontRight");
-        bl = hardwareMap.get(DcMotor.class, "backLeft");
-        br = hardwareMap.get(DcMotor.class, "backRight");
+        fl = hardwareMap.get(DcMotor.class, "frontleft");
+        fr = hardwareMap.get(DcMotor.class, "frontright");
+        bl = hardwareMap.get(DcMotor.class, "backleft");
+        br = hardwareMap.get(DcMotor.class, "backright");
 
         //launcherLeft = hardwareMap.get(DcMotor.class, "shooter");
         launcher = hardwareMap.get(DcMotor.class, "shooter");

@@ -42,7 +42,7 @@ public class AutoRedSmallZone extends LinearOpMode {
         turnByDeg(25, 2.0);
         sleep(50);
         shooting(4400.0);
-        turnToHeadingDeg(0.0, 2.5);
+        turnToHeadingDeg(0.0, 2.0);
         sleep(50);
         driveForwardInchesVel(24, drive.percentMaxRpm(0.5), 0.0, 2.0);
         drive.stopDrive();
@@ -103,8 +103,8 @@ public class AutoRedSmallZone extends LinearOpMode {
         launch.startLaunch(wheelTargetRpm);
         ElapsedTime spin = new ElapsedTime();
         spin.reset();
-        while (opModeIsActive() && spin.seconds() < 7.0) {
-            sleep(3000);
+        while (opModeIsActive() && spin.seconds() < 12.0) {
+            sleep(6000);
             for (int i = 0; i < 4 && opModeIsActive(); i++) {
                 bar.pushBall(0.55, 0.2);
                 sleep(400);

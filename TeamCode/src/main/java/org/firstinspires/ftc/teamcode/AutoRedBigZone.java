@@ -103,7 +103,7 @@ public class AutoRedBigZone extends LinearOpMode {
         launch.startLaunch(wheelTargetRpm);
         ElapsedTime spin = new ElapsedTime();
         spin.reset();
-        while (opModeIsActive() && spin.seconds() < 7.0) {
+        while (opModeIsActive() && spin.seconds() < 9.0) {
             sleep(3000);
             for (int i = 0; i < 4 && opModeIsActive(); i++) {
                 bar.pushBall(0.55, 0.2);

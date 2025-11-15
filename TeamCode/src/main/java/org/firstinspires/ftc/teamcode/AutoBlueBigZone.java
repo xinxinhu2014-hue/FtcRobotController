@@ -39,9 +39,9 @@ public class AutoBlueBigZone extends LinearOpMode {
         sleep(50);
         //driveStrafeInchesVel(24, drive.percentMaxRpm(0.4), 0.0, 6, towardRight);
         //sleep(250);
-        turnByDeg(-140, 2.0);
+        turnByDeg(-95, 2.0);
         sleep(50);
-        shooting(2900.0);
+        shooting(3000.0);
         turnToHeadingDeg(0.0, 2.5);
         sleep(50);
         driveForwardInchesVel(24, drive.percentMaxRpm(0.5), 0.0, 2.0);

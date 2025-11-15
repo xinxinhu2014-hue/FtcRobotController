@@ -120,7 +120,9 @@ public class RobotOrientDrive extends OpMode {
         launchRpm = launch.currentWheelRpm();
         telemetry.addData("Target wheel RPM", "%.0f", wheelTargetRpm);  // << no hard-code
         telemetry.addData("Actual wheel RPM", "%.0f", launchRpm);
-        telemetry.addData("Shooter", launching ? "ON" : "OFF");
+        if (launchRpm <= wheelTargetRpm * 1.02 && launchRpm >= wheelTargetRpm * 0.98) {
+            telemetry.addData("Shooter", "READY! READY!");
+        }
         telemetry.update();
     }
 }

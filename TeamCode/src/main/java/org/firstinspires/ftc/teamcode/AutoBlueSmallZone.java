@@ -39,7 +39,7 @@ public class AutoBlueSmallZone extends LinearOpMode {
         sleep(50);
         //driveStrafeInchesVel(24, drive.percentMaxRpm(0.4), 0.0, 6, towardRight);
         //sleep(250);
-        turnByDeg(-25, 2.0);
+        turnByDeg(15, 2.0);
         sleep(50);
         shooting(4400.0);
         turnToHeadingDeg(0.0, 2.0);
@@ -103,7 +103,7 @@ public class AutoBlueSmallZone extends LinearOpMode {
         launch.startLaunch(wheelTargetRpm);
         ElapsedTime spin = new ElapsedTime();
         spin.reset();
-        while (opModeIsActive() && spin.seconds() < 12.0) {
+        while (opModeIsActive() && spin.seconds() < 8.0) {
             sleep(6000);
             double launchSpeed;
             for (int i = 0; i < 4 && opModeIsActive(); i++) {
@@ -114,7 +114,7 @@ public class AutoBlueSmallZone extends LinearOpMode {
                 telemetry.update();
 
                 bar.pushBall(0.55, 0.2);
-                sleep(400);
+                sleep(500);
                 bar.release(0.65, 1.0);
                 sleep(1000);
 

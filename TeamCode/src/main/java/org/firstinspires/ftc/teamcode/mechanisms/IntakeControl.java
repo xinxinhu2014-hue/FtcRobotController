@@ -16,4 +16,8 @@ public class IntakeControl {
     public void setIntakePower(double power) {
         intakeControl.setPower(power);
     }
+
+    public double getIntakePower(){
+        return intakeControl.getPower();
+    }
 }

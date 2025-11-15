@@ -106,7 +106,7 @@ public class AutoBlueSmallZone extends LinearOpMode {
         while (opModeIsActive() && spin.seconds() < 8.0) {
             sleep(6000);
             double launchSpeed;
-            for (int i = 0; i < 4 && opModeIsActive(); i++) {
+            for (int i = 0; i < 5 && opModeIsActive(); i++) {
                 launchSpeed = launch.currentWheelRpm();
                 telemetry.addData("launch target speed: ", wheelTargetRpm);
                 telemetry.addData("Actual wheel RPM", "%.0f", launchSpeed);

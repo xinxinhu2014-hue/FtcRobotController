@@ -41,7 +41,7 @@ public class AutoBlueBigZone extends LinearOpMode {
         //sleep(250);
         turnByDeg(-95, 2.0);
         sleep(50);
-        shooting(3000.0);
+        shooting(3500.0);
         turnToHeadingDeg(0.0, 2.5);
         sleep(50);
         driveForwardInchesVel(24, drive.percentMaxRpm(0.5), 0.0, 2.0);
@@ -104,7 +104,7 @@ public class AutoBlueBigZone extends LinearOpMode {
         ElapsedTime spin = new ElapsedTime();
         spin.reset();
         while (opModeIsActive() && spin.seconds() < 8.0) {
-            sleep(3000);
+            sleep(4000);
             double launchSpeed;
             for (int i = 0; i < 5 && opModeIsActive(); i++) {
                 launchSpeed = launch.currentWheelRpm();

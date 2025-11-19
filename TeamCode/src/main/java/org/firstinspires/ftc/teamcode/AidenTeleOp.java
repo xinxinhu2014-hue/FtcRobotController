@@ -190,7 +190,7 @@ public class AidenTeleOp extends OpMode {
         boolean dpadUp = gamepad1.dpad_up;
         if (dpadUp && !lastDpadUp && launching) {
             double newTarget = wheelTargetRpm + wheelRpmAdjustment;
-            setShooterRPM(newTarget);
+            setShooterRPM(Math.min(5000, newTarget));
         }
         lastDpadUp = dpadUp;
 

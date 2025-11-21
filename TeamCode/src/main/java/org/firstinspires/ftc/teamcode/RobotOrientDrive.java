@@ -20,7 +20,7 @@ public class RobotOrientDrive extends OpMode {
     private boolean lastDpadDown = false;
     private double wheelTargetRpm;
     private final double wheelRpmAdjustment = 100.0;
-    double launchRpm;
+    double launchRpm, launchRpmError;
 
 
     @Override
@@ -92,7 +92,7 @@ public class RobotOrientDrive extends OpMode {
 
         // shoot: a - start launching wheel at high speed
         if (gamepad1.a && !launching) {
-            wheelTargetRpm = 3800.0; // about 7 ft shooting distance
+            wheelTargetRpm = 4071.0; // at small launching zone
             launch.startLaunch(wheelTargetRpm);
             launching = true;
         }
@@ -106,7 +106,7 @@ public class RobotOrientDrive extends OpMode {
 
         // shoot: x - start launching wheel at low speed
         if (gamepad1.x && !launching) {
-            wheelTargetRpm = 2900.0; // about 15" shooting distance
+            wheelTargetRpm = 3000.0; // about 15" shooting distance
             launch.startLaunch(wheelTargetRpm);
             launching = true;
         }
@@ -118,8 +118,13 @@ public class RobotOrientDrive extends OpMode {
         }
 
         launchRpm = launch.currentWheelRpm();
+        launchRpmError = launchRpm - wheelTargetRpm;
         telemetry.addData("Target wheel RPM", "%.0f", wheelTargetRpm);  // << no hard-code
         telemetry.addData("Actual wheel RPM", "%.0f", launchRpm);
+        telemetry.addData("RPM Error: ", launchRpmError);
+        if(Math.abs(launchRpmError) <= 50) {
+            telemetry.addLine("RPM is in the range");
+        }
         telemetry.addData("Shooter", launching ? "ON" : "OFF");
         telemetry.update();
     }

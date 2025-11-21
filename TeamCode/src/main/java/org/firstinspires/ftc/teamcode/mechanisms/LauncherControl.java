@@ -7,15 +7,15 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public class LauncherControl {
 
 
-    private static final double TICKS_PER_REV = 28; // = 7 * 4 for NeveRest 1:1 motor
+    private static final double TICKS_PER_REV = 28.0; // = 7 * 4 for NeveRest 1:1 motor
     private static final double GEAR_RATIO = 50.0/30.0; // Motor : Wheel = 50: 30
-    private static final double MAX_MOTOR_RPM = 6600; // for NeveRest 1:1 motor
+    private static final double MAX_MOTOR_RPM = 6600.0; // for NeveRest 1:1 motor
     private static final double MAX_WHEEL_RPM = MAX_MOTOR_RPM * GEAR_RATIO;
-    private static final double MIN_WHEEL_RPM = 2000; // test out when shooting in shortest range
-    private static final double kP = 3.0; // test out
-    private static final double kI = 0.1; // test out
+    private static final double MIN_WHEEL_RPM = 2000.0; // test out when shooting in shortest range
+    private static final double kP = 0.08; // test out
+    private static final double kI = 0.0; // test out
     private static final double kD = 0.0; // test out
-    private static double kF = 32767 / (MAX_MOTOR_RPM * TICKS_PER_REV / 60);
+    private static final double kF = 1.2 * 32767.0 / (MAX_MOTOR_RPM * TICKS_PER_REV / 60.0);
     private DcMotorEx launchMotor;
 
 
@@ -26,6 +26,7 @@ public class LauncherControl {
         launchMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         launchMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         launchMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        //launchMotor.setVelocityPIDFCoefficients(kP, kI, kD, kF);
     }
 
     double rpmToTicksPerSec(double rpm) { return rpm * TICKS_PER_REV / 60; }
@@ -41,15 +42,19 @@ public class LauncherControl {
         launchMotor.setVelocity(0);
     }
 
-    private void setPIDF(double motorRpm) {
-        kF = 32767 / (motorRpm * TICKS_PER_REV / 60);
-        launchMotor.setVelocityPIDFCoefficients(kP, kI, kD, kF);
-    }
-
     public void startLaunch(double desiredWheelRpm) {
         double wheelRpm = Math.min(MAX_WHEEL_RPM, Math.max(MIN_WHEEL_RPM, desiredWheelRpm));
         double motorRpm = wheelRpm / GEAR_RATIO;
-        setPIDF(motorRpm);
+        double kFscale, kPadjust = 0.0;
+        if (wheelRpm > 3600) {
+            kFscale = 1.0515;          // extra push only for very high RPM
+            kPadjust = 0.1;
+        } else if (wheelRpm > 3200) {
+            kFscale = 1.05; // 1.04
+        } else {
+            kFscale = 1.05; // 1.0
+        }
+        launchMotor.setVelocityPIDFCoefficients(kP + kPadjust, kI, kD, kF * kFscale);
         launchMotor.setVelocity(rpmToTicksPerSec(motorRpm));
     }
 

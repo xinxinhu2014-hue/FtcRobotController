@@ -15,7 +15,7 @@ public class LauncherControl {
     private static final double kP = 0.08; // test out
     private static final double kI = 0.0; // test out
     private static final double kD = 0.0; // test out
-    private static final double kF = 1.4 * 32767.0 / (MAX_MOTOR_RPM * TICKS_PER_REV / 60.0);
+    private static final double kF = 1.2 * 32767.0 / (MAX_MOTOR_RPM * TICKS_PER_REV / 60.0);
     private DcMotorEx launchMotor;
 
 
@@ -47,10 +47,10 @@ public class LauncherControl {
         double motorRpm = wheelRpm / GEAR_RATIO;
         double kFscale, kPadjust = 0.0;
         if (wheelRpm > 3600) {
-            kFscale = 1.19;          // extra push only for very high RPM
-            kPadjust = 0.05;
+            kFscale = 1.0515;          // extra push only for very high RPM
+            kPadjust = 0.1;
         } else if (wheelRpm > 3200) {
-            kFscale = 1.09; // 1.04
+            kFscale = 1.05; // 1.04
         } else {
             kFscale = 1.05; // 1.0
         }

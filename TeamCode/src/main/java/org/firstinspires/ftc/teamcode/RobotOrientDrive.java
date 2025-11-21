@@ -21,6 +21,7 @@ public class RobotOrientDrive extends OpMode {
     private double wheelTargetRpm;
     private final double wheelRpmAdjustment = 100.0;
     double launchRpm, launchRpmError;
+    int shootingType = 0;
 
 
     @Override
@@ -95,6 +96,7 @@ public class RobotOrientDrive extends OpMode {
             wheelTargetRpm = 4071.0; // at small launching zone
             launch.startLaunch(wheelTargetRpm);
             launching = true;
+            shootingType = 3;
         }
 
         // shoot: b - start launching wheel at medium speed
@@ -102,6 +104,7 @@ public class RobotOrientDrive extends OpMode {
             wheelTargetRpm = 3400.0; // about 50" shooting distance
             launch.startLaunch(wheelTargetRpm);
             launching = true;
+            shootingType = 2;
         }
 
         // shoot: x - start launching wheel at low speed
@@ -109,23 +112,39 @@ public class RobotOrientDrive extends OpMode {
             wheelTargetRpm = 3000.0; // about 15" shooting distance
             launch.startLaunch(wheelTargetRpm);
             launching = true;
+            shootingType = 1;
         }
 
         // shoot: y - stop launching wheel
         if (gamepad1.y && launching) {
             launch.stopLaunch();
             launching = false;
+            shootingType = 0;
         }
 
         launchRpm = launch.currentWheelRpm();
         launchRpmError = launchRpm - wheelTargetRpm;
-        telemetry.addData("Target wheel RPM", "%.0f", wheelTargetRpm);  // << no hard-code
-        telemetry.addData("Actual wheel RPM", "%.0f", launchRpm);
-        telemetry.addData("RPM Error: ", launchRpmError);
-        if(Math.abs(launchRpmError) <= 50) {
-            telemetry.addLine("RPM is in the range");
-        }
         telemetry.addData("Shooter", launching ? "ON" : "OFF");
+        if(launching) {
+            if(shootingType == 3){
+                telemetry.addLine("Far shot");
+            }
+            if(shootingType == 2){
+                telemetry.addLine("Middle shot");
+            }
+            if(shootingType == 1){
+                telemetry.addLine("Close shot");
+            }
+            if (launchRpmError < 0) {
+                telemetry.addData("BELOW target by: ", Math.abs(launchRpmError));
+            }
+            if (launchRpmError > 0) {
+                telemetry.addData("ABOVE target by: ", Math.abs(launchRpmError));
+            }
+            if (Math.abs(launchRpmError) <= 50) {
+                telemetry.addLine("RPM is in the range, recommend fire!");
+            }
+        }
         telemetry.update();
     }
 }

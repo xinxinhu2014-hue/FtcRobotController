@@ -30,10 +30,10 @@ public class MecanumDrive {
     private final DcMotorEx[] motors = new DcMotorEx[4];
 
     public void init(HardwareMap hardwareMap) {
-        motors[0] = hardwareMap.get(DcMotorEx.class, "frontleft");
-        motors[1] = hardwareMap.get(DcMotorEx.class, "frontright");
-        motors[2] = hardwareMap.get(DcMotorEx.class, "backleft");
-        motors[3] = hardwareMap.get(DcMotorEx.class, "backright");
+        motors[0] = hardwareMap.get(DcMotorEx.class, "FrontLeft");
+        motors[1] = hardwareMap.get(DcMotorEx.class, "FrontRight");
+        motors[2] = hardwareMap.get(DcMotorEx.class, "BackLeft");
+        motors[3] = hardwareMap.get(DcMotorEx.class, "BackRight");
 
         motors[2].setDirection(DcMotor.Direction.REVERSE);
         motors[0].setDirection(DcMotor.Direction.REVERSE);

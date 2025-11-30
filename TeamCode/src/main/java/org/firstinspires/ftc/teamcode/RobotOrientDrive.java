@@ -2,17 +2,18 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 import org.firstinspires.ftc.teamcode.mechanisms.MecanumDrive;
-import org.firstinspires.ftc.teamcode.mechanisms.PushBar;
+import org.firstinspires.ftc.teamcode.mechanisms.ReleaseDoors;
 import org.firstinspires.ftc.teamcode.mechanisms.IntakeControl;
 import org.firstinspires.ftc.teamcode.mechanisms.LauncherControl;
 
 @TeleOp()
 public class RobotOrientDrive extends OpMode {
     MecanumDrive drive = new MecanumDrive();
-    PushBar bar = new PushBar();
+    ReleaseDoors bar = new ReleaseDoors();
     IntakeControl intake = new IntakeControl();
     LauncherControl launch = new LauncherControl();
     private boolean launching = false;
@@ -22,6 +23,8 @@ public class RobotOrientDrive extends OpMode {
     private final double wheelRpmAdjustment = 100.0;
     double launchRpm, launchRpmError;
     int shootingType = 0;
+    ElapsedTime timer = new ElapsedTime();
+    boolean inTimedIntakeing = false;
 
 
     @Override
@@ -30,11 +33,12 @@ public class RobotOrientDrive extends OpMode {
         bar.init(hardwareMap);
         intake.init(hardwareMap);
         launch.init(hardwareMap);
+        timer.reset();
     }
 
     @Override
     public void start() {
-        bar.pushBall(0.65, 1.0);
+        bar.closeDoor(0.0, 0.1);
     }
 
     private double dead(double v){
@@ -53,23 +57,35 @@ public class RobotOrientDrive extends OpMode {
         rotate = dead(rotate);
         drive.drive(forward, right, rotate);
 
-        // press right bumper to swing bars, release to reset
+        // press right bumper to swing bars, closeDoor to reset
         if (gamepad1.right_bumper) {
-            bar.pushBall(0.55, 0.2);
+            bar.openDoor(0.6, 0.5);
             //telemetry.addData("after push", bar.getBarPosition());
         } else {
-            bar.release(0.65, 1.0);
-            //telemetry.addData("after release", bar.getBarPosition());
+            bar.closeDoor(0.0, 0.1);
+            //telemetry.addData("after closeDoor", bar.getBarPosition());
         }
 
         // intake
-        // left trigger: take in balls with adjusted speed
-        // left bumper: release jammed balls
-        if (gamepad1.left_bumper) {
-            intake.setIntakePower(-1.0);
-        } else {
+        // left trigger: take in first 2 balls
+        if (!inTimedIntakeing) {
             intake.setIntakePower(gamepad1.left_trigger);
         }
+
+        // left bumper: run intake for 1 second.
+        if (gamepad1.leftBumperWasPressed() && !inTimedIntakeing) {
+            inTimedIntakeing = true;
+            timer.reset();
+            intake.setIntakePower(0.9);
+        }
+
+        if (inTimedIntakeing && timer.seconds() >= 0.2) {
+            intake.setIntakePower(0.0);          // Stop motor
+            inTimedIntakeing = false;
+        }
+
+
+
 
         // shoot
         // target RPM adjustment: dpad up, dpad down

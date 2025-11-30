@@ -16,17 +16,19 @@ public class LauncherControl {
     private static final double kI = 0.0; // test out
     private static final double kD = 0.0; // test out
     private static final double kF = 1.2 * 32767.0 / (MAX_MOTOR_RPM * TICKS_PER_REV / 60.0);
-    private DcMotorEx launchMotor;
+    private DcMotorEx[] launchMotors = new DcMotorEx[2];
 
 
 
     public void init(HardwareMap hardwareMap){
-        launchMotor = hardwareMap.get(DcMotorEx.class, "shooter");
-        launchMotor.setDirection(DcMotor.Direction.REVERSE);
-        launchMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        launchMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        launchMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        //launchMotor.setVelocityPIDFCoefficients(kP, kI, kD, kF);
+        launchMotors[0] = hardwareMap.get(DcMotorEx.class, "FrontLaunch");
+        launchMotors[1] = hardwareMap.get(DcMotorEx.class, "BackLaunch");
+        for (int i = 0; i <2; i++)  {
+            launchMotors[i].setDirection(DcMotor.Direction.REVERSE);
+            launchMotors[i].setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            launchMotors[i].setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            launchMotors[i].setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        }
     }
 
     double rpmToTicksPerSec(double rpm) { return rpm * TICKS_PER_REV / 60; }
@@ -34,12 +36,14 @@ public class LauncherControl {
 
     // Read wheel RPM from current motor velocity
     public double currentWheelRpm() {
-        double motorTps = launchMotor.getVelocity();                   // motor tps
+        double motorTps = (launchMotors[0].getVelocity() + launchMotors[1].getVelocity()) / 2;  // motor tps
         return ticksPerSecToRpm(motorTps) * GEAR_RATIO;                // wheel rpm
     }
 
     public void stopLaunch() {
-        launchMotor.setVelocity(0);
+        for(int i = 0; i < 2; i++) {
+            launchMotors[i].setVelocity(0);
+        }
     }
 
     public void startLaunch(double desiredWheelRpm) {
@@ -54,8 +58,10 @@ public class LauncherControl {
         } else {
             kFscale = 1.05; // 1.0
         }
-        launchMotor.setVelocityPIDFCoefficients(kP + kPadjust, kI, kD, kF * kFscale);
-        launchMotor.setVelocity(rpmToTicksPerSec(motorRpm));
+        for (int i = 0; i < 2; i++) {
+            launchMotors[i].setVelocityPIDFCoefficients(kP + kPadjust, kI, kD, kF * kFscale);
+            launchMotors[i].setVelocity(rpmToTicksPerSec(motorRpm));
+        }
     }
 
     public double adjustLaunchRpm(double currentWheelRpm, double rpmChange) {

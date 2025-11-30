@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.mechanisms.MecanumDrive;
-import org.firstinspires.ftc.teamcode.mechanisms.PushBar;
+import org.firstinspires.ftc.teamcode.mechanisms.ReleaseDoors;
 import org.firstinspires.ftc.teamcode.mechanisms.IntakeControl;
 import org.firstinspires.ftc.teamcode.mechanisms.LauncherControl;
 import org.firstinspires.ftc.teamcode.mechanisms.YawControl;
@@ -15,7 +15,7 @@ public class AutoRedBigZone extends LinearOpMode {
 
     private static final int SETTLE_LOOPS = 6;    // how many consecutive loops inside tolerance before stopping
     MecanumDrive drive = new MecanumDrive();
-    PushBar bar = new PushBar();
+    ReleaseDoors bar = new ReleaseDoors();
     IntakeControl intake = new IntakeControl();
     LauncherControl launch = new LauncherControl();
     YawControl robotYaw = new YawControl();
@@ -113,9 +113,9 @@ public class AutoRedBigZone extends LinearOpMode {
                 telemetry.addData("Ready to fire ball", i + 1);
                 telemetry.update();
 
-                bar.pushBall(0.55, 0.2);
+                bar.openDoor(0.55, 0.2);
                 sleep(400);
-                bar.release(0.65, 1.0);
+                bar.closeDoor(0.65, 1.0);
                 sleep(1000);
 
                 telemetry.addData("Ball fired", i + 1);

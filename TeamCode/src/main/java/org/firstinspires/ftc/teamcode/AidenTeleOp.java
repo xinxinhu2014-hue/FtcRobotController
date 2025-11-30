@@ -7,14 +7,14 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 import org.firstinspires.ftc.teamcode.mechanisms.MecanumDrive;
-import org.firstinspires.ftc.teamcode.mechanisms.PushBar;
+import org.firstinspires.ftc.teamcode.mechanisms.ReleaseDoors;
 import org.firstinspires.ftc.teamcode.mechanisms.IntakeControl;
 
 @TeleOp(name = "Competition TeleOp with RPM Control")
 public class AidenTeleOp extends OpMode {
     // Your existing mechanism classes
     MecanumDrive drive = new MecanumDrive();
-    PushBar bar = new PushBar();
+    ReleaseDoors bar = new ReleaseDoors();
     IntakeControl intake = new IntakeControl();
 
     // Shooter motor - directly controlled for RPM management
@@ -84,7 +84,7 @@ public class AidenTeleOp extends OpMode {
     @Override
     public void start() {
         // Reset push bar to starting position
-        bar.pushBall(0.65, 1.0);
+        bar.openDoor(0.65, 1.0);
     }
 
     private double dead(double v){
@@ -168,9 +168,9 @@ public class AidenTeleOp extends OpMode {
         if (rightBumper && !lastRightBumper) {
             barExtended = !barExtended;
             if (barExtended) {
-                bar.pushBall(0.55, 0.2);
+                bar.openDoor(0.55, 0.2);
             } else {
-                bar.release(0.65, 1.0);
+                bar.closeDoor(0.65, 1.0);
             }
         }
         lastRightBumper = rightBumper;

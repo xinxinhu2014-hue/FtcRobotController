@@ -46,7 +46,7 @@ public class RobotOrientDrive extends OpMode {
     public void loop() {
         // use gamepad sticks to control driving
         double forward = gamepad1.left_stick_y;
-        double right = -gamepad1.left_stick_x;
+        double right = gamepad1.left_stick_x;
         double rotate = gamepad1.right_stick_x;
         forward = dead(forward);
         right = dead(right);

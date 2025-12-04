@@ -8,14 +8,14 @@ public class LauncherControl {
 
 
     private static final double TICKS_PER_REV = 28.0; // = 7 * 4 for NeveRest 1:1 motor
-    private static final double GEAR_RATIO = 1.0;
+    private static final double GEAR_RATIO = 24.0/14.0; // motor to wheel
     private static final double MAX_MOTOR_RPM = 6600.0; // for NeveRest 1:1 motor
     private static final double MAX_WHEEL_RPM = MAX_MOTOR_RPM * GEAR_RATIO;
     private static final double MIN_WHEEL_RPM = 2000.0; // test out when shooting in shortest range
     private static final double kP = 0.08; // test out
     private static final double kI = 0.0; // test out
     private static final double kD = 0.0; // test out
-    private static final double kF = 1.2 * 32767.0 / (MAX_MOTOR_RPM * TICKS_PER_REV / 60.0);
+    private static final double kF = 32767.0 / (MAX_MOTOR_RPM * TICKS_PER_REV / 60.0);
     private DcMotorEx[] launchMotors = new DcMotorEx[2];
 
 
@@ -51,12 +51,14 @@ public class LauncherControl {
         double motorRpm = wheelRpm / GEAR_RATIO;
         double kFscale, kPadjust = 0.0;
         if (wheelRpm > 3600) {
-            kFscale = 1.0515;          // extra push only for very high RPM
+            kFscale = 1.62;          // extra push only for very high RPM
             kPadjust = 0.1;
         } else if (wheelRpm > 3200) {
-            kFscale = 1.05; // 1.04
+            kFscale = 1.58;
+            kPadjust = 0.08;
         } else {
-            kFscale = 1.05; // 1.0
+            kFscale = 1.58;
+            kPadjust = 0.04;
         }
         for (int i = 0; i < 2; i++) {
             launchMotors[i].setVelocityPIDFCoefficients(kP + kPadjust, kI, kD, kF * kFscale);

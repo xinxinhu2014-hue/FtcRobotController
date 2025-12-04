@@ -26,7 +26,6 @@ public class RobotOrientDrive extends OpMode {
     ElapsedTime timer = new ElapsedTime();
     boolean inTimedIntakeing = false;
 
-
     @Override
     public void init() {
         drive.init(hardwareMap);
@@ -67,12 +66,13 @@ public class RobotOrientDrive extends OpMode {
         }
 
         // intake
-        // left trigger: take in first 2 balls
+        // left trigger: take in first 2 balls from field
+        // right trigger: take balls from human player from top
         if (!inTimedIntakeing) {
-            intake.setIntakePower(gamepad1.left_trigger);
+            intake.setIntakePower(gamepad1.left_trigger - gamepad1.right_trigger);
         }
 
-        // left bumper: run intake for 1 second.
+        // left bumper: run intake for 0.2 second.
         if (gamepad1.leftBumperWasPressed() && !inTimedIntakeing) {
             inTimedIntakeing = true;
             timer.reset();
@@ -83,6 +83,7 @@ public class RobotOrientDrive extends OpMode {
             intake.setIntakePower(0.0);          // Stop motor
             inTimedIntakeing = false;
         }
+
 
 
 
@@ -141,6 +142,8 @@ public class RobotOrientDrive extends OpMode {
         launchRpm = launch.currentWheelRpm();
         launchRpmError = launchRpm - wheelTargetRpm;
         telemetry.addData("Shooter", launching ? "ON" : "OFF");
+        telemetry.addData("Target RPM", wheelTargetRpm);
+        telemetry.addData("Current RPM", launchRpm);
         if(launching) {
             if(shootingType == 3){
                 telemetry.addLine("Far shot");

@@ -15,7 +15,7 @@ public class AutoBlueBigZone extends LinearOpMode {
 
     private static final int SETTLE_LOOPS = 6;    // how many consecutive loops inside tolerance before stopping
     MecanumDrive drive = new MecanumDrive();
-    ReleaseDoors bar = new ReleaseDoors();
+    ReleaseDoors gates = new ReleaseDoors();
     IntakeControl intake = new IntakeControl();
     LauncherControl launch = new LauncherControl();
     YawControl robotYaw = new YawControl();
@@ -24,7 +24,7 @@ public class AutoBlueBigZone extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         drive.init(hardwareMap);
-        bar.init(hardwareMap);
+        gates.init(hardwareMap);
         intake.init(hardwareMap);
         launch.init(hardwareMap);
         robotYaw.init(hardwareMap);
@@ -35,16 +35,16 @@ public class AutoBlueBigZone extends LinearOpMode {
         waitForStart();
         if (isStopRequested()) return;
 
-        driveForwardInchesVel(24, drive.percentMaxRpm(0.5), 0.0, 2.0);
+        driveForwardInchesVel(26.7, drive.percentMaxRpm(0.5), 0.0, 2.0);
         sleep(50);
         //driveStrafeInchesVel(24, drive.percentMaxRpm(0.4), 0.0, 6, towardRight);
         //sleep(250);
-        turnByDeg(-95, 2.0);
+        turnByDeg(-125, 2.0);
         sleep(50);
-        shooting(3500.0);
+        shooting(2500.0);
         turnToHeadingDeg(0.0, 2.5);
         sleep(50);
-        driveForwardInchesVel(24, drive.percentMaxRpm(0.5), 0.0, 2.0);
+        driveForwardInchesVel(26, drive.percentMaxRpm(0.5), 0.0, 2.0);
         drive.stopDrive();
     }
 
@@ -113,9 +113,9 @@ public class AutoBlueBigZone extends LinearOpMode {
                 telemetry.addData("Ready to fire ball", i + 1);
                 telemetry.update();
 
-                bar.openDoor(0.55, 0.2);
+                gates.openDoor(0.55, 0.2);
                 sleep(400);
-                bar.closeDoor(0.65, 1.0);
+                gates.closeDoor(0.65, 1.0);
                 sleep(1000);
 
                 telemetry.addData("Ball fired", i + 1);

@@ -16,12 +16,12 @@ public class ReleaseDoors {
     }
 
     public List<Double> getBarPosition() {
-        List<Double> barPosition = new ArrayList<Double>();
+        List<Double> doorPosition = new ArrayList<Double>();
 
-        barPosition.add(leftDoor.getPosition());
-        barPosition.add(rightDoor.getPosition());
+        doorPosition.add(leftDoor.getPosition());
+        doorPosition.add(rightDoor.getPosition());
 
-        return barPosition;
+        return doorPosition;
     }
     public void openDoor(double leftBarPosition, double rightBarPosition) {
         leftDoor.setDirection(Servo.Direction.FORWARD);

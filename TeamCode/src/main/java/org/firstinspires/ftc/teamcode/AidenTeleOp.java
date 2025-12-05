@@ -83,7 +83,7 @@ public class AidenTeleOp extends OpMode {
 
     @Override
     public void start() {
-        // Reset push gate to starting position
+        // Reset push gates to starting position
         bar.openDoor(0.65, 1.0);
     }
 

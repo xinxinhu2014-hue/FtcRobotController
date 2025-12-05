@@ -23,18 +23,18 @@ public class ReleaseDoors {
 
         return doorPosition;
     }
-    public void openDoor(double leftBarPosition, double rightBarPosition) {
+    public void openDoor(double leftDoorPosition, double rightDoorPosition) {
         leftDoor.setDirection(Servo.Direction.FORWARD);
         rightDoor.setDirection(Servo.Direction.REVERSE);
-        leftDoor.setPosition(leftBarPosition);
-        rightDoor.setPosition(rightBarPosition);
+        leftDoor.setPosition(leftDoorPosition);
+        rightDoor.setPosition(rightDoorPosition);
     }
 
-    public void closeDoor(double leftBarPosition, double rightBarPosition) {
+    public void closeDoor(double leftDoorPosition, double rightDoorPosition) {
         leftDoor.setDirection(Servo.Direction.REVERSE);
         rightDoor.setDirection(Servo.Direction.FORWARD);
-        leftDoor.setPosition(leftBarPosition);
-        rightDoor.setPosition(rightBarPosition);
+        leftDoor.setPosition(leftDoorPosition);
+        rightDoor.setPosition(rightDoorPosition);
     }
 
 

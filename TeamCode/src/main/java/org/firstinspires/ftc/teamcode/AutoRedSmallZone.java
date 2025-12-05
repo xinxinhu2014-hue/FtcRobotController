@@ -9,13 +9,15 @@ import org.firstinspires.ftc.teamcode.mechanisms.ReleaseDoors;
 import org.firstinspires.ftc.teamcode.mechanisms.IntakeControl;
 import org.firstinspires.ftc.teamcode.mechanisms.LauncherControl;
 import org.firstinspires.ftc.teamcode.mechanisms.YawControl;
+import org.firstinspires.ftc.teamcode.mechanisms.WallControl;
 
 @Autonomous
 public class AutoRedSmallZone extends LinearOpMode {
 
     private static final int SETTLE_LOOPS = 6;    // how many consecutive loops inside tolerance before stopping
     MecanumDrive drive = new MecanumDrive();
-    ReleaseDoors bar = new ReleaseDoors();
+    ReleaseDoors gates = new ReleaseDoors();
+    WallControl walls = new WallControl();
     IntakeControl intake = new IntakeControl();
     LauncherControl launch = new LauncherControl();
     YawControl robotYaw = new YawControl();
@@ -24,7 +26,8 @@ public class AutoRedSmallZone extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         drive.init(hardwareMap);
-        bar.init(hardwareMap);
+        gates.init(hardwareMap);
+        walls.init(hardwareMap);
         intake.init(hardwareMap);
         launch.init(hardwareMap);
         robotYaw.init(hardwareMap);
@@ -100,23 +103,29 @@ public class AutoRedSmallZone extends LinearOpMode {
     }
 
     private void shooting(double wheelTargetRpm) {
-        launch.startLaunch(wheelTargetRpm);
+        launch.useVelocityControl(wheelTargetRpm);
+        walls.tightenWall(0.12, 0.2);
         ElapsedTime spin = new ElapsedTime();
         spin.reset();
         while (opModeIsActive() && spin.seconds() < 8.0) {
             sleep(6000);
             double launchSpeed;
-            for (int i = 0; i < 5 && opModeIsActive(); i++) {
+            for (int i = 0; i < 3 && opModeIsActive(); i++) {
                 launchSpeed = launch.currentWheelRpm();
                 telemetry.addData("launch target speed: ", wheelTargetRpm);
                 telemetry.addData("Actual wheel RPM", "%.0f", launchSpeed);
                 telemetry.addData("Ready to fire ball", i + 1);
                 telemetry.update();
 
-                bar.openDoor(0.55, 0.2);
+                gates.openDoor(0.6, 0.7);
                 sleep(400);
-                bar.closeDoor(0.65, 1.0);
-                sleep(1000);
+                gates.closeDoor(0.1, 0.0);
+                if (i < 2) {
+                    intake.setIntakePower(1.0);
+                    sleep(800);
+                    intake.setIntakePower(0.0);
+                    sleep(1000);
+                }
 
                 telemetry.addData("Ball fired", i + 1);
                 telemetry.update();

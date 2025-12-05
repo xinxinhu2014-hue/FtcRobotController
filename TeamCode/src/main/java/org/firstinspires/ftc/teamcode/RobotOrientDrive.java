@@ -25,9 +25,18 @@ public class RobotOrientDrive extends OpMode {
     private final double wheelRpmAdjustment = 100.0;
     double launchRpm, launchRpmError;
     int shootingType = 0;
-    ElapsedTime timer = new ElapsedTime();
+    ElapsedTime intakeTimer = new ElapsedTime();
+    ElapsedTime shootTimer = new ElapsedTime();
+    ElapsedTime rollTimer = new ElapsedTime();
+    ElapsedTime launchingTimer = new ElapsedTime();
     boolean inTimedIntakeing = false;
-
+    boolean isShooting = false;
+    boolean isRolling = false;
+    boolean shootingNotFinish = false;
+    boolean launchInRange = false, firstTimeInRange = false;
+    int ballCount = 0;
+    double inRangeTime = 0.0, outRangeTime = 0.0, firstInRangeTime = 0.0;
+    double boostingTime;
 
     @Override
     public void init() {
@@ -36,13 +45,13 @@ public class RobotOrientDrive extends OpMode {
         intake.init(hardwareMap);
         launch.init(hardwareMap);
         wall.init(hardwareMap);
-        timer.reset();
+        intakeTimer.reset();
     }
 
     @Override
     public void start() {
-        gate.closeDoor(0.0, 0.1);
-        wall.loosenWall(0.5, 0.5);
+        gate.closeDoor(0.1, 0.0);
+        wall.loosenWall(0.78, 0.7);
     }
 
     private double dead(double v){
@@ -61,38 +70,29 @@ public class RobotOrientDrive extends OpMode {
         rotate = dead(rotate);
         drive.drive(forward, right, rotate);
 
-        // press right bumper to open the doors, release to close the doors
-        if (gamepad1.right_bumper) {
-            gate.openDoor(0.6, 0.5);
-            //telemetry.addData("after push", gate.getBarPosition());
-        } else {
-            gate.closeDoor(0.0, 0.1);
-            //telemetry.addData("after closeDoor", gate.getBarPosition());
-        }
 
         // intake
         // left trigger: take in first 2 balls from field
         // right trigger: take balls from human player from top
-        if (!inTimedIntakeing) {
+        if (!inTimedIntakeing && !shootingNotFinish) {
             intake.setIntakePower(gamepad1.left_trigger);
             if (gamepad1.left_trigger > 0) {
-                wall.tightenWall(0.0, 0.0); // test out position for tightening
+                wall.tightenWall(0.12, 0.2); // test out position for tightening
             } else {
-                wall.tightenWall(1.0, 1.0); // test out position for loosening
+                wall.loosenWall(0.78, 0.7); // test out position for loosening
             }
         }
 
         // left bumper: run intake for 0.2 second.
         if (gamepad1.leftBumperWasPressed() && !inTimedIntakeing) {
             inTimedIntakeing = true;
-            timer.reset();
-            wall.tightenWall(0.0, 0.0); // test out position for tightening
+            intakeTimer.reset();
+            wall.tightenWall(0.12, 0.2); // test out position for tightening
             intake.setIntakePower(0.9);
         }
 
-        if (inTimedIntakeing && timer.seconds() >= 0.2) {
+        if (inTimedIntakeing && intakeTimer.seconds() >= 0.2) {
             intake.setIntakePower(0.0);             // Stop motor
-            wall.tightenWall(1.0, 1.0); // test out position for loosening
             inTimedIntakeing = false;
         }
 
@@ -110,7 +110,7 @@ public class RobotOrientDrive extends OpMode {
         boolean dpadUp = gamepad1.dpad_up;
         if (dpadUp && !lastDpadUp && launching) {
             wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, wheelRpmAdjustment);
-            launch.startLaunch(wheelTargetRpm); // << apply new target while running
+            launch.useVelocityControl(wheelTargetRpm); // << apply new target while running
         }
             lastDpadUp = dpadUp;
 
@@ -118,40 +118,112 @@ public class RobotOrientDrive extends OpMode {
         boolean dpadDown = gamepad1.dpad_down;
         if (dpadDown && !lastDpadDown && launching) {
             wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, -wheelRpmAdjustment);
-            launch.startLaunch(wheelTargetRpm); // << apply new target while running
+            launch.useVelocityControl(wheelTargetRpm); // << apply new target while running
         }
         lastDpadDown = dpadDown;
 
         // launching flywheels: a - start launching wheel at high speed
         if (gamepad1.a && !launching) {
             wheelTargetRpm = 4071.0; // at small launching zone
-            launch.startLaunch(wheelTargetRpm);
             launching = true;
             shootingType = 3;
+            launchingTimer.reset();
+            outRangeTime = launchingTimer.seconds();
+            launchInRange = false;
+            firstTimeInRange = false;
+            firstInRangeTime = 0.0;
+            inRangeTime = 0.0;
+            boostingTime = 1.1;
         }
 
         // launching flywheels: b - start launching wheel at medium speed
         if (gamepad1.b && !launching) {
             wheelTargetRpm = 3400.0; // about 50" shooting distance
-            launch.startLaunch(wheelTargetRpm);
             launching = true;
             shootingType = 2;
+            launchingTimer.reset();
+            outRangeTime = launchingTimer.seconds();
+            launchInRange = false;
+            firstTimeInRange = false;
+            firstInRangeTime = 0.0;
+            inRangeTime = 0.0;
+            boostingTime = 0.9;
         }
 
         // launching flywheels: x - start launching wheel at low speed
         if (gamepad1.x && !launching) {
-            wheelTargetRpm = 3000.0; // about 15" shooting distance
-            launch.startLaunch(wheelTargetRpm);
             launching = true;
+            wheelTargetRpm = 3000.0; // about 15" shooting distance
             shootingType = 1;
+            launchingTimer.reset();
+            outRangeTime = launchingTimer.seconds();
+            launchInRange = false;
+            firstTimeInRange = false;
+            firstInRangeTime = 0.0;
+            inRangeTime = 0.0;
+            boostingTime =0.7;
+        }
+
+        if (launching) {
+            if (launchingTimer.seconds() < boostingTime) {
+                // boost phase
+                launch.boostLaunch(1.0);
+            } else {
+                // PIDF hold phase
+                launch.useVelocityControl(wheelTargetRpm);
+            }
         }
 
         // launching flywheels: y - stop launching wheel
         if (gamepad1.y && launching) {
             launch.stopLaunch();
+            inRangeTime = 0.0;
             launching = false;
+            firstTimeInRange = false;
+            firstInRangeTime = 0.0;
             shootingType = 0;
         }
+
+        // shooting
+        if (gamepad1.rightBumperWasPressed() && !isShooting && !shootingNotFinish) {
+            shootingNotFinish = true;
+            isShooting = true;
+            shootTimer.reset();
+            wall.tightenWall(0.12, 0.2); // test out position for tightening
+            gate.openDoor(0.6, 0.7);
+            ballCount = ballCount + 1;
+        }
+
+        if (isShooting && shootTimer.seconds() >= 0.25 && ballCount < 3) {
+            gate.closeDoor(0.1, 0.0);
+            isShooting = false;
+            isRolling = true;
+            rollTimer.reset();
+            intake.setIntakePower(0.9);
+        }
+
+        if (isRolling && rollTimer.seconds() >= 0.8 && ballCount < 3) {
+            intake.setIntakePower(0.0);             // Stop motor
+            isRolling = false;
+            isShooting = true;
+            shootTimer.reset();
+            gate.openDoor(0.6, 0.7);
+            ballCount = ballCount + 1;
+        }
+
+        if (ballCount == 3 && shootTimer.seconds() > 1.0) {
+            ballCount = 0;
+            wall.loosenWall(0.78, 0.7);
+            isShooting = false;
+            shootingNotFinish = false;
+            gate.closeDoor(0.1, 0.0);
+        }
+
+
+
+
+
+
 
 
 
@@ -177,8 +249,24 @@ public class RobotOrientDrive extends OpMode {
                 telemetry.addData("ABOVE target by: ", Math.abs(launchRpmError));
             }
             if (Math.abs(launchRpmError) <= 50) {
+                if(!launchInRange) {
+                    inRangeTime = launchingTimer.seconds() - outRangeTime;
+                    launchInRange = true;
+                    if (!firstTimeInRange){
+                        firstInRangeTime = inRangeTime;
+                        firstTimeInRange = true;
+                    }
+                }
                 telemetry.addLine("RPM is in the range, recommend fire!");
+            } else {
+                if (launchInRange) {
+                    outRangeTime = launchingTimer.seconds();
+                    launchInRange = false;
+                }
             }
+            telemetry.addData("Launcher is running for ", launchingTimer.seconds());
+            telemetry.addData("First time in range in seconds of ", firstInRangeTime);
+            telemetry.addData("In range in seconds of ", inRangeTime);
         }
         telemetry.update();
     }

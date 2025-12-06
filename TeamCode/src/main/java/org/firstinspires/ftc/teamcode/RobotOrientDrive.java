@@ -51,7 +51,7 @@ public class RobotOrientDrive extends OpMode {
     @Override
     public void start() {
         gate.closeDoor(0.1, 0.0);
-        wall.loosenWall(0.78, 0.7);
+        wall.loosenWall(0.73, 0.65);
     }
 
     private double dead(double v){
@@ -79,7 +79,7 @@ public class RobotOrientDrive extends OpMode {
             if (gamepad1.left_trigger > 0) {
                 wall.tightenWall(0.12, 0.2); // test out position for tightening
             } else {
-                wall.loosenWall(0.78, 0.7); // test out position for loosening
+                wall.loosenWall(0.72, 0.65); // test out position for loosening
             }
         }
 
@@ -194,7 +194,7 @@ public class RobotOrientDrive extends OpMode {
             ballCount = ballCount + 1;
         }
 
-        if (isShooting && shootTimer.seconds() >= 0.25 && ballCount < 3) {
+        if (isShooting && shootTimer.seconds() >= 0.25 && ballCount < 1) {
             gate.closeDoor(0.1, 0.0);
             isShooting = false;
             isRolling = true;
@@ -202,7 +202,7 @@ public class RobotOrientDrive extends OpMode {
             intake.setIntakePower(0.9);
         }
 
-        if (isRolling && rollTimer.seconds() >= 0.8 && ballCount < 3) {
+        if (isRolling && rollTimer.seconds() >= 0.8 && ballCount < 1) {
             intake.setIntakePower(0.0);             // Stop motor
             isRolling = false;
             isShooting = true;
@@ -211,9 +211,9 @@ public class RobotOrientDrive extends OpMode {
             ballCount = ballCount + 1;
         }
 
-        if (ballCount == 3 && shootTimer.seconds() > 1.0) {
+        if (ballCount == 1 && shootTimer.seconds() > 0.5) {
             ballCount = 0;
-            wall.loosenWall(0.78, 0.7);
+            wall.loosenWall(0.68, 0.6);
             isShooting = false;
             shootingNotFinish = false;
             gate.closeDoor(0.1, 0.0);

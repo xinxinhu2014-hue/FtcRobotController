@@ -25,17 +25,13 @@ public class RobotOrientDrive extends OpMode {
     private final double wheelRpmAdjustment = 100.0;
     double launchRpm, launchRpmError;
     int shootingType = 0;
-    ElapsedTime intakeTimer = new ElapsedTime();
-    ElapsedTime shootTimer = new ElapsedTime();
-    ElapsedTime rollTimer = new ElapsedTime();
-    ElapsedTime launchingTimer = new ElapsedTime();
-    boolean inTimedIntakeing = false;
-    boolean isShooting = false;
-    boolean isRolling = false;
-    boolean shootingNotFinish = false;
-    boolean launchInRange = false, firstTimeInRange = false;
+    ElapsedTime intakeTimer = new ElapsedTime(), shootTimer = new ElapsedTime(), rollTimer = new ElapsedTime(),
+            launchingTimer = new ElapsedTime(), doorCloseTimer = new ElapsedTime();
+    boolean inTimedIntakeing = false, isShooting = false, isRolling = false, shootingNotFinish = false,
+            launchInRange = false, firstTimeInRange = false, isDoorOpen = false;
     int ballCount = 0;
-    double inRangeTime = 0.0, outRangeTime = 0.0, firstInRangeTime = 0.0;
+    double inRangeTime = 0.0, outRangeTime = 0.0, firstInRangeTime = 0.0,
+            rollerRuningTime = 0.0, shootingTime = 0.0;
     double boostingTime;
 
     @Override
@@ -50,8 +46,8 @@ public class RobotOrientDrive extends OpMode {
 
     @Override
     public void start() {
-        gate.closeDoor(0.1, 0.0);
-        wall.loosenWall(0.73, 0.65);
+        gate.closeDoor(0.1, 0.2);
+        wall.loosenWall(0.74, 0.7);
     }
 
     private double dead(double v){
@@ -77,9 +73,9 @@ public class RobotOrientDrive extends OpMode {
         if (!inTimedIntakeing && !shootingNotFinish) {
             intake.setIntakePower(gamepad1.left_trigger);
             if (gamepad1.left_trigger > 0) {
-                wall.tightenWall(0.12, 0.2); // test out position for tightening
+                wall.tightenWall(0.16, 0.2); // test out position for tightening
             } else {
-                wall.loosenWall(0.72, 0.65); // test out position for loosening
+                wall.loosenWall(0.74, 0.7); // test out position for loosening
             }
         }
 
@@ -87,7 +83,7 @@ public class RobotOrientDrive extends OpMode {
         if (gamepad1.leftBumperWasPressed() && !inTimedIntakeing) {
             inTimedIntakeing = true;
             intakeTimer.reset();
-            wall.tightenWall(0.12, 0.2); // test out position for tightening
+            wall.tightenWall(0.16, 0.2); // test out position for tightening
             intake.setIntakePower(0.9);
         }
 
@@ -189,34 +185,65 @@ public class RobotOrientDrive extends OpMode {
             shootingNotFinish = true;
             isShooting = true;
             shootTimer.reset();
-            wall.tightenWall(0.12, 0.2); // test out position for tightening
-            gate.openDoor(0.6, 0.7);
+            wall.tightenWall(0.16, 0.20); // test out position for tightening
+            gate.openDoor(0.6, 0.5);
+            intake.setIntakePower(-0.6); // below balls start moving down
             ballCount = ballCount + 1;
+            shootingTime = 0.4;
         }
 
-        if (isShooting && shootTimer.seconds() >= 0.25 && ballCount < 1) {
-            gate.closeDoor(0.1, 0.0);
+        if (isShooting && shootTimer.seconds() >= shootingTime && ballCount < 3) {
+            //gate.closeDoor(0.1, 0.2);
+            intake.setIntakePower(0.0); // ball stop moving down and stay there
+            wall.loosenWall(0.79, 0.75);
             isShooting = false;
+            doorCloseTimer.reset();
+            isDoorOpen = true;
+        }
+
+        if (isDoorOpen && doorCloseTimer.seconds() >= 1.0 && ballCount < 3) {
+            wall.tightenWall(0.16, 0.2); // ball start moving up
             isRolling = true;
+            isDoorOpen = false;
             rollTimer.reset();
             intake.setIntakePower(0.9);
+            if (ballCount == 1) {
+                rollerRuningTime = 0.19;
+            } else {
+                rollerRuningTime = 0.4;
+            }
         }
 
-        if (isRolling && rollTimer.seconds() >= 0.8 && ballCount < 1) {
-            intake.setIntakePower(0.0);             // Stop motor
+
+        if (isRolling && rollTimer.seconds() >= rollerRuningTime && ballCount < 3) {
+            intake.setIntakePower(0.0); // ball stop moving up and top one gets out
+            // wall.loosenWall(0.79, 0.75);
             isRolling = false;
             isShooting = true;
             shootTimer.reset();
-            gate.openDoor(0.6, 0.7);
+            //gate.openDoor(0.6, 0.5);
+            if (ballCount == 2) {
+                shootingTime = 0.4;
+            } else {
+                shootingTime = 0.4;
+            }
+            intake.setIntakePower(-0.5); // below balls start moving down
+            /*
+            if (ballCount < 2) {
+                wall.loosenWall(0.79, 0.75);
+            } else {
+                wall.tightenWall(0.11, 0.15);
+            }
+   */
             ballCount = ballCount + 1;
         }
 
-        if (ballCount == 1 && shootTimer.seconds() > 0.5) {
+        if (ballCount == 3 && shootTimer.seconds() > shootingTime) {
             ballCount = 0;
-            wall.loosenWall(0.68, 0.6);
+            wall.loosenWall(0.78, 0.7);
             isShooting = false;
             shootingNotFinish = false;
-            gate.closeDoor(0.1, 0.0);
+            gate.closeDoor(0.1, 0.2);
         }
 
 

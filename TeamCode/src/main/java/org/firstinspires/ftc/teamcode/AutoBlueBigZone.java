@@ -31,25 +31,28 @@ public class AutoBlueBigZone extends LinearOpMode {
         intake.init(hardwareMap);
         launch.init(hardwareMap);
         robotYaw.init(hardwareMap);
-        robotYaw.resetYaw();
+
+        gates.closeDoor(0.1, 0.2);
+        walls.loosenWall(0.74, 0.7);
 
 
         telemetry.addLine("Ready");
         telemetry.update();
         waitForStart();
         if (isStopRequested()) return;
+        robotYaw.resetYaw();
 
-        driveForwardInchesVel(26.7, drive.percentMaxRpm(0.5), 0.0, 2.0);
-        sleep(50);
+        //driveForwardInchesVel(26.7, drive.percentMaxRpm(0.5), 0.0, 2.0);
+        //sleep(50);
         //driveStrafeInchesVel(24, drive.percentMaxRpm(0.4), 0.0, 6, towardRight);
         //sleep(250);
-        turnByDeg(-125, 2.0);
-        sleep(50);
-        shooting(2500.0);
-        turnToHeadingDeg(0.0, 2.5);
-        sleep(50);
-        driveForwardInchesVel(26, drive.percentMaxRpm(0.5), 0.0, 2.0);
-        drive.stopDrive();
+        //turnByDeg(-125, 2.0);
+        //sleep(50);
+        shooting(3300.0);
+        //turnToHeadingDeg(0.0, 2.5);
+        //sleep(50);
+        //driveForwardInchesVel(26, drive.percentMaxRpm(0.5), 0.0, 2.0);
+        //drive.stopDrive();
     }
 
     private void driveForwardInchesVel(double inches, double baseRPM, double targetDeg, double timeoutSec) {
@@ -62,6 +65,7 @@ public class AutoBlueBigZone extends LinearOpMode {
             telemetry.addData("Mode", "Straight");
             telemetry.addData("Target - Yaw Error", "%.1f - %.1f", targetDeg, yawErr);
             telemetry.update();
+            idle();
         }
         drive.stopDrive();
         drive.runUsingEncoders();
@@ -77,6 +81,7 @@ public class AutoBlueBigZone extends LinearOpMode {
             telemetry.addData("Mode", "Strafe" + (right ? "Right" : "Left"));
             telemetry.addData("Target - Yaw Error", "%.1f - %.1f", targetDeg, yawErr);
             telemetry.update();
+            idle();
         }
         drive.stopDrive();
         drive.runUsingEncoders();
@@ -89,9 +94,16 @@ public class AutoBlueBigZone extends LinearOpMode {
         while (opModeIsActive() && timer.seconds() < timeoutSec) {
             double yawErr = targetDeg - robotYaw.getYaw();
             // Stop adjusting, if turned into tolerance range of target and it has been adjusted enough time (SETTLE_LOOPS).
-            if (drive.turnAdjustYawErr(yawErr) && ++settled >= SETTLE_LOOPS) break;
+            if (drive.turnAdjustYawErr(yawErr)) {
+                settled++;
+                if (settled >= SETTLE_LOOPS) break;
+            } else {
+                settled = 0; // lost tolerance; start counting again
+            }
+
             telemetry.addData("Target - Yaw Error", "%.1f - %.1f", targetDeg, yawErr);
             telemetry.update();
+            idle();
         }
         drive.stopDrive();
         drive.runUsingEncoders();
@@ -104,34 +116,77 @@ public class AutoBlueBigZone extends LinearOpMode {
     }
 
     private void shooting(double wheelTargetRpm) {
-        launch.useVelocityControl(wheelTargetRpm);
-        walls.tightenWall(0.12, 0.2);
+        walls.tightenWall(0.16, 0.2);
+
+        final double RPM_TOLERANCE = 75.0;
+        final double TIMEOUT_SEC = 10.0;
+
         ElapsedTime spin = new ElapsedTime();
         spin.reset();
-        while (opModeIsActive() && spin.seconds() < 8.0) {
-            sleep(4000);
-            double launchSpeed;
-            for (int i = 0; i < 3 && opModeIsActive(); i++) {
-                launchSpeed = launch.currentWheelRpm();
-                telemetry.addData("launch target speed: ", wheelTargetRpm);
-                telemetry.addData("Actual wheel RPM", "%.0f", launchSpeed);
-                telemetry.addData("Ready to fire ball", i + 1);
-                telemetry.update();
 
-                gates.openDoor(0.6, 0.7);
-                sleep(400);
-                gates.closeDoor(0.1, 0.0);
-                if (i < 2) {
-                    intake.setIntakePower(1.0);
-                    sleep(800);
-                    intake.setIntakePower(0.0);
-                    sleep(1000);
-                }
+        // Spin up immediately
+        launch.boostLaunch(1.0);
+        sleep(600);
+        launch.useVelocityControl(wheelTargetRpm);
 
-                telemetry.addData("Ball fired", i + 1);
-                telemetry.update();
+        int ballsFired = 0;
+        boolean doorOpened = false;
+
+        while (opModeIsActive() && spin.seconds() < TIMEOUT_SEC && ballsFired < 3) {
+            double launchSpeed = launch.currentWheelRpm();
+            double launchSpeedError = Math.abs(launchSpeed - wheelTargetRpm);
+
+            // Wait until within tolerance
+            if (launchSpeedError > RPM_TOLERANCE) {
+                // Let PIDF keep working
+                launch.useVelocityControl(wheelTargetRpm);
+                sleep(50);
+                continue;
             }
-            launch.stopLaunch();
+
+            telemetry.addData("Target RPM", wheelTargetRpm);
+            telemetry.addData("Actual RPM", "%.0f", launchSpeed);
+            telemetry.addData("RPM Error", "%.0f", launchSpeedError);
+            telemetry.addData("Balls fired", ballsFired);
+            telemetry.update();
+
+
+            // Now within tolerance: open door once
+            if (!doorOpened) {
+                gates.openDoor(0.6, 0.5);
+                doorOpened = true;
+                sleep(200); // a bit of time for gate to move
+            }
+
+            // Feed ONE ball
+            double rollDownPower = -0.7;
+            long rollDownTime = 500;
+            double rollUpPower = 0.8;
+            long rollUpTime = 250;
+
+            if (ballsFired == 2) {  // last ball
+                rollDownPower = -0.6;
+                rollDownTime = 200;
+                rollUpTime = 500;
+            }
+
+            intake.setIntakePower(rollDownPower);
+            sleep(rollDownTime);
+            intake.setIntakePower(0.0);
+            sleep(300); // short settle
+
+            intake.setIntakePower(rollUpPower);
+            sleep(rollUpTime);
+            intake.setIntakePower(0.0);
+
+            ballsFired++;
         }
+
+        // Safety: stop everything and reset
+        intake.setIntakePower(0.0);
+        launch.stopLaunch();
+        gates.closeDoor(0.1, 0.2);  // assuming these args make sense with your method
+        walls.loosenWall(0.74, 0.7); // if you want to return wall to original position
     }
+
 }

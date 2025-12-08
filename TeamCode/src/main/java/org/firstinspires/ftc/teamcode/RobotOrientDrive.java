@@ -25,13 +25,13 @@ public class RobotOrientDrive extends OpMode {
     private final double wheelRpmAdjustment = 100.0;
     double launchRpm, launchRpmError;
     int shootingType = 0;
-    ElapsedTime intakeTimer = new ElapsedTime(), shootTimer = new ElapsedTime(), rollTimer = new ElapsedTime(),
-            launchingTimer = new ElapsedTime(), doorCloseTimer = new ElapsedTime();
+    ElapsedTime intakeTimer = new ElapsedTime(), rollDownTimer = new ElapsedTime(), rollUpTimer = new ElapsedTime(),
+            launchingTimer = new ElapsedTime(), wheelRecoveryTimer = new ElapsedTime();
     boolean inTimedIntakeing = false, isShooting = false, isRolling = false, shootingNotFinish = false,
-            launchInRange = false, firstTimeInRange = false, isDoorOpen = false;
+            launchInRange = false, firstTimeInRange = false, isWheelRecovered = false;
     int ballCount = 0;
     double inRangeTime = 0.0, outRangeTime = 0.0, firstInRangeTime = 0.0,
-            rollerRuningTime = 0.0, shootingTime = 0.0;
+            rollerUpWaitTime = 0.0, rollDownWaitTime = 0.0;
     double boostingTime;
 
     @Override
@@ -83,7 +83,7 @@ public class RobotOrientDrive extends OpMode {
         if (gamepad1.leftBumperWasPressed() && !inTimedIntakeing) {
             inTimedIntakeing = true;
             intakeTimer.reset();
-            wall.tightenWall(0.16, 0.2); // test out position for tightening
+            //wall.tightenWall(0.16, 0.2); // test out position for tightening
             intake.setIntakePower(0.9);
         }
 
@@ -149,7 +149,7 @@ public class RobotOrientDrive extends OpMode {
         // launching flywheels: x - start launching wheel at low speed
         if (gamepad1.x && !launching) {
             launching = true;
-            wheelTargetRpm = 3000.0; // about 15" shooting distance
+            wheelTargetRpm = 3350.0; // about 15" shooting distance
             shootingType = 1;
             launchingTimer.reset();
             outRangeTime = launchingTimer.seconds();
@@ -184,50 +184,56 @@ public class RobotOrientDrive extends OpMode {
         if (gamepad1.rightBumperWasPressed() && !isShooting && !shootingNotFinish) {
             shootingNotFinish = true;
             isShooting = true;
-            shootTimer.reset();
-            wall.tightenWall(0.16, 0.20); // test out position for tightening
-            gate.openDoor(0.6, 0.5);
+            wall.tightenWall(0.16, 0.20);
+            gate.openDoor(0.6, 0.5); // gate opens and top ball out
             intake.setIntakePower(-0.6); // below balls start moving down
+            rollDownTimer.reset();
             ballCount = ballCount + 1;
-            shootingTime = 0.4;
+            rollDownWaitTime = 0.4;
         }
 
-        if (isShooting && shootTimer.seconds() >= shootingTime && ballCount < 3) {
+        if (isShooting && rollDownTimer.seconds() >= rollDownWaitTime && ballCount < 3) {
             //gate.closeDoor(0.1, 0.2);
             intake.setIntakePower(0.0); // ball stop moving down and stay there
             wall.loosenWall(0.79, 0.75);
             isShooting = false;
-            doorCloseTimer.reset();
-            isDoorOpen = true;
+            wheelRecoveryTimer.reset();
+            isWheelRecovered = true;
+            if(ballCount == 1) {
+                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, 150);
+            } else {
+                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, -250);
+            }
+            launch.useVelocityControl(wheelTargetRpm);
         }
 
-        if (isDoorOpen && doorCloseTimer.seconds() >= 1.0 && ballCount < 3) {
+        if (isWheelRecovered && wheelRecoveryTimer.seconds() >= 1.0 && ballCount < 3) {
             wall.tightenWall(0.16, 0.2); // ball start moving up
             isRolling = true;
-            isDoorOpen = false;
-            rollTimer.reset();
-            intake.setIntakePower(0.9);
+            isWheelRecovered = false;
+            rollUpTimer.reset();
+            intake.setIntakePower(0.7);
             if (ballCount == 1) {
-                rollerRuningTime = 0.19;
+                rollerUpWaitTime = 0.2;
             } else {
-                rollerRuningTime = 0.4;
+                rollerUpWaitTime = 0.4;
             }
         }
 
 
-        if (isRolling && rollTimer.seconds() >= rollerRuningTime && ballCount < 3) {
+        if (isRolling && rollUpTimer.seconds() >= rollerUpWaitTime && ballCount < 3) {
             intake.setIntakePower(0.0); // ball stop moving up and top one gets out
             // wall.loosenWall(0.79, 0.75);
             isRolling = false;
             isShooting = true;
-            shootTimer.reset();
             //gate.openDoor(0.6, 0.5);
             if (ballCount == 2) {
-                shootingTime = 0.4;
+                rollDownWaitTime = 0.4;
             } else {
-                shootingTime = 0.4;
+                rollDownWaitTime = 0.4;
             }
             intake.setIntakePower(-0.5); // below balls start moving down
+            rollDownTimer.reset();
             /*
             if (ballCount < 2) {
                 wall.loosenWall(0.79, 0.75);
@@ -238,7 +244,7 @@ public class RobotOrientDrive extends OpMode {
             ballCount = ballCount + 1;
         }
 
-        if (ballCount == 3 && shootTimer.seconds() > shootingTime) {
+        if (ballCount == 3 && rollDownTimer.seconds() > rollDownWaitTime) {
             ballCount = 0;
             wall.loosenWall(0.78, 0.7);
             isShooting = false;

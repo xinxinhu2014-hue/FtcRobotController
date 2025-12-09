@@ -30,12 +30,12 @@ public class RobotOrientDrive extends OpMode {
     final double DOUBLE_PRESS_WINDOW = 0.30;  // time allowed between presses (seconds)
 
     ElapsedTime intakeTimer = new ElapsedTime(), rollDownTimer = new ElapsedTime(), rollUpTimer = new ElapsedTime(),
-            launchingTimer = new ElapsedTime(), wheelRecoveryTimer = new ElapsedTime();
-    boolean inTimedIntakeing = false, isShooting = false, isRolling = false, shootingNotFinish = false,
-            launchInRange = false, firstTimeInRange = false, isWheelRecovered = false;
+            launchingTimer = new ElapsedTime(), wheelRecoveryTimer = new ElapsedTime(), doorClosedTimer = new ElapsedTime();
+    boolean inTimedIntakeing = false, isBallFired = false, isRolling = false, shootingNotFinish = false,
+            launchInRange = false, firstTimeInRange = false, isWheelRecovered = false, isDoorClosed = false;
     int ballCount = 0;
     double inRangeTime = 0.0, outRangeTime = 0.0, firstInRangeTime = 0.0,
-            rollerUpWaitTime = 0.0, rollDownWaitTime = 0.0, wheelRecoverWaitTime = 0.0;
+            rollerUpWaitTime = 0.0, rollDownWaitTime = 0.0, wheelRecoverWaitTime = 0.0, doorClosedWaitTime = 0.0;
     double boostingTime;
 
     @Override
@@ -184,24 +184,39 @@ public class RobotOrientDrive extends OpMode {
             shootingType = 0;
         }
 
+
+
+
+
+
+
+
         // 3 balls shooting
-        if (gamepad1.rightBumperWasPressed() && !isShooting && !shootingNotFinish) {
+        if (gamepad1.rightBumperWasPressed() && !isBallFired && !shootingNotFinish) {
+            // Mark 3-ball shooting process start
             shootingNotFinish = true;
-            isShooting = true;
+            // Gate opens and top ball out
+            gate.openDoor(0.6, 0.5);
+            ballCount = ballCount + 1;
+            isBallFired = true;
+            // Wall tightens and below balls move down
             wall.tightenWall(0.16, 0.20);
-            gate.openDoor(0.6, 0.5); // gate opens and top ball out
             intake.setIntakePower(-0.7); // below balls start moving down
             rollDownTimer.reset();
-            ballCount = ballCount + 1;
             rollDownWaitTime = 0.5;
         }
 
-        if (isShooting && rollDownTimer.seconds() >= rollDownWaitTime && ballCount < 3) {
-            //gate.closeDoor(0.1, 0.2);
-            intake.setIntakePower(0.0); // ball stop moving down and stay there
-            wall.loosenWall(0.79, 0.75);
-            isShooting = false;
-            wheelRecoveryTimer.reset();
+        if (isBallFired && rollDownTimer.seconds() >= rollDownWaitTime && ballCount < 3) {
+            isBallFired = false;
+            // Stop moving down and stay
+            intake.setIntakePower(0.0);
+            if (ballCount == 1) {
+                gate.closeDoor(0.1, 0.2);
+            }
+            isDoorClosed = true;
+            doorClosedTimer.reset();
+            doorClosedWaitTime = 0.1;
+            /*wheelRecoveryTimer.reset();
             isWheelRecovered = true;
             if(ballCount == 1) {
                 wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, 150);
@@ -210,46 +225,51 @@ public class RobotOrientDrive extends OpMode {
                 wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, -250);
                 wheelRecoverWaitTime = 1.0;
             }
-            launch.useVelocityControl(wheelTargetRpm);
+            launch.useVelocityControl(wheelTargetRpm); */
         }
 
+        if (isDoorClosed && doorClosedTimer.seconds() >= doorClosedWaitTime && ballCount < 3) {
+            isDoorClosed = false;
+
+            if (ballCount == 1) {
+                isRolling = true;
+                intake.setIntakePower(0.8);
+                rollUpTimer.reset();
+                rollerUpWaitTime = 0.5;
+            } else {
+                isWheelRecovered = true;
+            }
+        }
+
+        if (isRolling && rollUpTimer.seconds() >= rollerUpWaitTime && ballCount < 3) {
+            isRolling = false;
+            intake.setIntakePower(0.0);
+            isWheelRecovered = true;
+        }
         launchRpm = launch.currentWheelRpm();
         launchRpmError = launchRpm - wheelTargetRpm;
 
-
         if (isWheelRecovered && Math.abs(launchRpmError) <= 75 && ballCount < 3) {
-            wall.tightenWall(0.16, 0.2); // ball start moving up
-            isRolling = true;
             isWheelRecovered = false;
-            rollUpTimer.reset();
-            intake.setIntakePower(0.8);
             if (ballCount == 1) {
-                rollerUpWaitTime = 0.25;
+                gate.openDoor(0.6, 0.5);
+                intake.setIntakePower(-0.7);
+                rollDownTimer.reset();
+                rollDownWaitTime = 0.5;
             } else {
+                intake.setIntakePower(0.8);
+                rollUpTimer.reset();
                 rollerUpWaitTime = 0.5;
             }
-        }
-
-
-        if (isRolling && rollUpTimer.seconds() >= rollerUpWaitTime && ballCount < 3) {
-            intake.setIntakePower(0.0); // ball stop moving up and top one gets out
             ballCount = ballCount + 1;
-            isRolling = false;
-            isShooting = true;
-            //gate.openDoor(0.6, 0.5);
-            if (ballCount == 2) {
-                rollDownWaitTime = 0.2;
-            } else {
-                rollDownWaitTime = 0.8;
-            }
-            intake.setIntakePower(-0.6); // below balls start moving down
-            rollDownTimer.reset();
+            isBallFired = true;
         }
 
-        if (ballCount == 3 && rollDownTimer.seconds() > rollDownWaitTime) {
+
+        if (ballCount == 3 && rollUpTimer.seconds() > rollerUpWaitTime) {
             ballCount = 0;
             wall.loosenWall(0.74, 0.7);
-            isShooting = false;
+            isBallFired = false;
             shootingNotFinish = false;
             gate.closeDoor(0.1, 0.2);
         }

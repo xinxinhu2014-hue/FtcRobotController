@@ -132,6 +132,7 @@ public class AutoBlueBigZone extends LinearOpMode {
         int ballsFired = 0;
         boolean doorOpened = false;
 
+
         while (opModeIsActive() && spin.seconds() < TIMEOUT_SEC && ballsFired < 3) {
             double launchSpeed = launch.currentWheelRpm();
             double launchSpeedError = Math.abs(launchSpeed - wheelTargetRpm);
@@ -147,7 +148,7 @@ public class AutoBlueBigZone extends LinearOpMode {
             telemetry.addData("Target RPM", wheelTargetRpm);
             telemetry.addData("Actual RPM", "%.0f", launchSpeed);
             telemetry.addData("RPM Error", "%.0f", launchSpeedError);
-            telemetry.addData("Balls fired", ballsFired);
+            telemetry.addData("Balls fired", ballsFired + 1);
             telemetry.update();
 
 
@@ -170,14 +171,16 @@ public class AutoBlueBigZone extends LinearOpMode {
                 rollUpTime = 500;
             }
 
+            if (ballsFired >= 1) {
+                intake.setIntakePower(rollUpPower);
+                sleep(rollUpTime);
+                intake.setIntakePower(0.0);
+            }
+
             intake.setIntakePower(rollDownPower);
             sleep(rollDownTime);
             intake.setIntakePower(0.0);
             sleep(300); // short settle
-
-            intake.setIntakePower(rollUpPower);
-            sleep(rollUpTime);
-            intake.setIntakePower(0.0);
 
             ballsFired++;
         }

@@ -11,6 +11,7 @@ public class IntakeControl {
         intakeControl = hardwareMap.get(DcMotor.class, "Intake");
         intakeControl.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeControl.setDirection(DcMotorSimple.Direction.REVERSE);
+        intakeControl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
     }
 
     public void setIntakePower(double power) {

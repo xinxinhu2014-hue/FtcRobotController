@@ -153,7 +153,7 @@ public class RobotOrientDrive extends OpMode {
         // launching flywheels: x - start launching wheel at low speed
         if (gamepad1.x && !launching) {
             launching = true;
-            wheelTargetRpm = 3350.0; // about 15" shooting distance
+            wheelTargetRpm = 3550.0; // about 15" shooting distance
             shootingType = 1;
             launchingTimer.reset();
             outRangeTime = launchingTimer.seconds();
@@ -203,7 +203,7 @@ public class RobotOrientDrive extends OpMode {
             wall.tightenWall(0.16, 0.20);
             intake.setIntakePower(-0.7); // below balls start moving down
             rollDownTimer.reset();
-            rollDownWaitTime = 0.5;
+            rollDownWaitTime = 1.0;
         }
 
         if (isBallFired && rollDownTimer.seconds() >= rollDownWaitTime && ballCount < 3) {
@@ -216,16 +216,16 @@ public class RobotOrientDrive extends OpMode {
             isDoorClosed = true;
             doorClosedTimer.reset();
             doorClosedWaitTime = 0.1;
-            /*wheelRecoveryTimer.reset();
-            isWheelRecovered = true;
+            //wheelRecoveryTimer.reset();
+            //isWheelRecovered = true;
             if(ballCount == 1) {
-                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, 150);
-                wheelRecoverWaitTime = 1.5;
+                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, -200);
+                //wheelRecoverWaitTime = 1.5;
             } else {
-                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, -250);
-                wheelRecoverWaitTime = 1.0;
+                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, 0);
+                //wheelRecoverWaitTime = 1.0;
             }
-            launch.useVelocityControl(wheelTargetRpm); */
+            launch.useVelocityControl(wheelTargetRpm);
         }
 
         if (isDoorClosed && doorClosedTimer.seconds() >= doorClosedWaitTime && ballCount < 3) {
@@ -233,9 +233,9 @@ public class RobotOrientDrive extends OpMode {
 
             if (ballCount == 1) {
                 isRolling = true;
-                intake.setIntakePower(0.8);
+                intake.setIntakePower(0.9);
                 rollUpTimer.reset();
-                rollerUpWaitTime = 0.5;
+                rollerUpWaitTime = 0.6;
             } else {
                 isWheelRecovered = true;
             }
@@ -257,9 +257,9 @@ public class RobotOrientDrive extends OpMode {
                 rollDownTimer.reset();
                 rollDownWaitTime = 0.5;
             } else {
-                intake.setIntakePower(0.8);
+                intake.setIntakePower(0.9);
                 rollUpTimer.reset();
-                rollerUpWaitTime = 0.5;
+                rollerUpWaitTime = 0.9;
             }
             ballCount = ballCount + 1;
             isBallFired = true;

@@ -130,7 +130,7 @@ public class AutoBlueBigZone extends LinearOpMode {
         launch.useVelocityControl(wheelTargetRpm);
 
         int ballsFired = 0;
-        boolean doorOpened = false;
+
 
 
         while (opModeIsActive() && spin.seconds() < TIMEOUT_SEC && ballsFired < 3) {
@@ -150,39 +150,35 @@ public class AutoBlueBigZone extends LinearOpMode {
             telemetry.addData("RPM Error", "%.0f", launchSpeedError);
             telemetry.addData("Balls fired", ballsFired + 1);
             telemetry.update();
-
-
-            // Now within tolerance: open door once
-            if (!doorOpened) {
-                gates.openDoor(0.6, 0.5);
-                doorOpened = true;
-                sleep(200); // a bit of time for gate to move
-            }
-
-            // Feed ONE ball
             double rollDownPower = -0.7;
             long rollDownTime = 500;
             double rollUpPower = 0.8;
             long rollUpTime = 250;
 
-            if (ballsFired == 2) {  // last ball
-                rollDownPower = -0.6;
-                rollDownTime = 200;
-                rollUpTime = 500;
-            }
 
-            if (ballsFired >= 1) {
+            // Now within tolerance: open door for ball 1 and 2
+            if (ballsFired < 2) {
+                gates.openDoor(0.6, 0.5);
+                intake.setIntakePower(rollDownPower);
+                sleep(rollDownTime);
+                intake.setIntakePower(0.0);
+                sleep(300); // short settle
+            }
+            if (ballsFired == 2) {  // last ball
+                rollUpTime = 500;
+                intake.setIntakePower(rollUpPower);
+                sleep(rollUpTime);
+            }
+            ballsFired++;
+
+            if (ballsFired == 1) {
+                gates.closeDoor(0.1, 0.2);
+                sleep(200); // a bit of time for gate to move
                 intake.setIntakePower(rollUpPower);
                 sleep(rollUpTime);
                 intake.setIntakePower(0.0);
+                sleep(100);
             }
-
-            intake.setIntakePower(rollDownPower);
-            sleep(rollDownTime);
-            intake.setIntakePower(0.0);
-            sleep(300); // short settle
-
-            ballsFired++;
         }
 
         // Safety: stop everything and reset

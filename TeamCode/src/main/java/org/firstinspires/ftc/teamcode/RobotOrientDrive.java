@@ -177,6 +177,11 @@ public class RobotOrientDrive extends OpMode {
         // launching flywheels: y - stop launching wheel
         if (gamepad1.y && launching) {
             launch.stopLaunch();
+            ballCount = 0;
+            wall.loosenWall(0.74, 0.7);
+            isBallFired = false;
+            shootingNotFinish = false;
+            gate.closeDoor(0.1, 0.2);
             inRangeTime = 0.0;
             launching = false;
             firstTimeInRange = false;
@@ -219,7 +224,7 @@ public class RobotOrientDrive extends OpMode {
             //wheelRecoveryTimer.reset();
             //isWheelRecovered = true;
             if(ballCount == 1) {
-                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, -200);
+                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, -150);
                 //wheelRecoverWaitTime = 1.5;
             } else {
                 wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, 0);

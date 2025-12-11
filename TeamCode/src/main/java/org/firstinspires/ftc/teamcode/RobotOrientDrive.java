@@ -221,16 +221,17 @@ public class RobotOrientDrive extends OpMode {
             isDoorClosed = true;
             doorClosedTimer.reset();
             doorClosedWaitTime = 0.1;
-            //wheelRecoveryTimer.reset();
-            //isWheelRecovered = true;
+
             if(ballCount == 1) {
                 wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, -150);
-                //wheelRecoverWaitTime = 1.5;
+                wheelRecoverWaitTime = 1.5;
             } else {
                 wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, 0);
-                //wheelRecoverWaitTime = 1.0;
+                wheelRecoverWaitTime = 1.0;
             }
             launch.useVelocityControl(wheelTargetRpm);
+            wheelRecoveryTimer.reset();
+            isWheelRecovered = true;
         }
 
         if (isDoorClosed && doorClosedTimer.seconds() >= doorClosedWaitTime && ballCount < 3) {
@@ -254,7 +255,7 @@ public class RobotOrientDrive extends OpMode {
         launchRpm = launch.currentWheelRpm();
         launchRpmError = launchRpm - wheelTargetRpm;
 
-        if (isWheelRecovered && Math.abs(launchRpmError) <= 75 && ballCount < 3) {
+        if (isWheelRecovered && (Math.abs(launchRpmError) <= 75 || wheelRecoveryTimer.seconds() >= wheelRecoverWaitTime) && ballCount < 3) {
             isWheelRecovered = false;
             if (ballCount == 1) {
                 gate.openDoor(0.6, 0.5);

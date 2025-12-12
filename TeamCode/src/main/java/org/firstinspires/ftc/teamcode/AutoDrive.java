@@ -27,6 +27,8 @@ public abstract class AutoDrive extends LinearOpMode {
 
     // You can let each OpMode set this as needed
     protected boolean towardRight = true;
+    protected double leftGateClosePosition = 0.21, rightGateClosePosition = 0.31,
+            leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5;
 
     @Override
     public abstract void runOpMode() throws InterruptedException;
@@ -43,7 +45,7 @@ public abstract class AutoDrive extends LinearOpMode {
         robotYaw.init(hardwareMap);
 
         // Default start positions – same as your old code
-        gates.closeDoor(0.1, 0.2);
+        gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
         walls.loosenWall(0.74, 0.7);
     }
 
@@ -130,6 +132,10 @@ public abstract class AutoDrive extends LinearOpMode {
         launch.useVelocityControl(wheelTargetRpm);
 
         int ballsFired = 0;
+        double rollDownPower = 0.0;
+        long rollDownTime = 100;
+        double rollUpPower = 0.9;
+        long rollUpTime = 100;
 
         while (opModeIsActive() && spin.seconds() < TIMEOUT_SEC && ballsFired < 3) {
             double launchSpeed = launch.currentWheelRpm();
@@ -149,14 +155,12 @@ public abstract class AutoDrive extends LinearOpMode {
             telemetry.addData("Balls fired", ballsFired + 1);
             telemetry.update();
 
-            double rollDownPower = -0.7;
-            long rollDownTime = 500;
-            double rollUpPower = 0.8;
-            long rollUpTime = 250;
 
             // Now within tolerance: open door for ball 1 and 2
             if (ballsFired < 2) {
-                gates.openDoor(0.6, 0.5);
+                gates.openDoor(leftGateOpenPosition, rightGateOpenPosition); // door open 1st time to let 1st ball out; open 2nd time to let 2nd ball out
+                //1st ball: ball #2 & #3 not rolling down, pause 400 ms before closing the door
+                //2nd ball: ball #3 rolling down
                 intake.setIntakePower(rollDownPower);
                 sleep(rollDownTime);
                 intake.setIntakePower(0.0);
@@ -165,7 +169,7 @@ public abstract class AutoDrive extends LinearOpMode {
 
             // last ball (3rd): push up
             if (ballsFired == 2) {
-                rollUpTime = 500;
+                rollUpTime = 600;
                 intake.setIntakePower(rollUpPower);
                 sleep(rollUpTime);
             }
@@ -173,19 +177,28 @@ public abstract class AutoDrive extends LinearOpMode {
             ballsFired++;
 
             if (ballsFired == 1) {
-                gates.closeDoor(0.1, 0.2);
+                gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
+                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, 300);
                 sleep(200); // a bit of time for gate to move
+                // rolling to nudge 2nd ball after the gate
                 intake.setIntakePower(rollUpPower);
                 sleep(rollUpTime);
                 intake.setIntakePower(0.0);
                 sleep(100);
+                rollDownPower = -0.6;
+                rollDownTime = 300;
+                rollUpTime = 1500;
+            }
+
+            if (ballsFired == 2) {
+                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, 0);
             }
         }
 
         // Safety: stop everything and reset
         intake.setIntakePower(0.0);
         launch.stopLaunch();
-        gates.closeDoor(0.1, 0.2);
+        gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
         walls.loosenWall(0.74, 0.7);
     }
 }

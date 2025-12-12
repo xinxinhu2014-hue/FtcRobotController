@@ -220,7 +220,7 @@ public class RobotOrientDrive extends OpMode {
                 gate.closeDoor(leftGateClosePosition, rightGateClosePosition);
             }
             isDoorClosed = true;
-            doorClosedTimer.reset(); // It's time pausing for the door remained closing. Only work for first ball. After shooring 2nd ball, the door keeps open.
+            doorClosedTimer.reset(); // It's time pausing for the door remained closing. Only work for first ball. After shooting 2nd ball, the door keeps open.
             doorClosedWaitTime = 0.1;
 
             if(ballCount == 1) {

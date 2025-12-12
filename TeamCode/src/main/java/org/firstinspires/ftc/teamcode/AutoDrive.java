@@ -27,6 +27,7 @@ public abstract class AutoDrive extends LinearOpMode {
 
     // You can let each OpMode set this as needed
     protected boolean towardRight = true;
+    protected double leftGateClosePosition = 0.21, rightGateClosePosition = 0.31, leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5;
 
     @Override
     public abstract void runOpMode() throws InterruptedException;
@@ -43,7 +44,7 @@ public abstract class AutoDrive extends LinearOpMode {
         robotYaw.init(hardwareMap);
 
         // Default start positions – same as your old code
-        gates.closeDoor(0.1, 0.2);
+        gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
         walls.loosenWall(0.74, 0.7);
     }
 
@@ -115,15 +116,12 @@ public abstract class AutoDrive extends LinearOpMode {
     //  Shared shooting method - 3 Ball Sequential Shooting
     // =========================================================
 
-    protected void shooting(double wheelTargetRpm) {
+    protected void shooting(double wheelTargetRpm, double ballTwoRpmAdjust, double ballThreeRpmAdjust) {
         walls.tightenWall(0.16, 0.2);
 
         final double RPM_TOLERANCE = 75.0;
         final double TIMEOUT_SEC = 10.0;
-        final double leftGateClosePosition = 0.21;
-        final double rightGateClosePosition = 0.31;
-        final double leftGateOpenPosition = 0.6;
-        final double rightGateOpenPosition = 0.5;
+
 
         ElapsedTime launchingTimer = new ElapsedTime();
         launchingTimer.reset();
@@ -168,9 +166,9 @@ public abstract class AutoDrive extends LinearOpMode {
                 intake.setIntakePower(0.0);
 
                 // Adjust RPM for 2nd ball
-                wheelTargetRpm += 300;
+                wheelTargetRpm += ballTwoRpmAdjust;
                 launch.useVelocityControl(wheelTargetRpm);
-                sleep(1500);  // wait for wheel recovery
+                sleep(1000);  // wait for wheel recovery
             }
             // Ball 2: Open gate, roll down, close gate
             else if (ballCount == 1) {
@@ -181,6 +179,7 @@ public abstract class AutoDrive extends LinearOpMode {
                 ballCount++;
 
                 // No RPM adjustment for 3rd ball (or adjust as needed)
+                wheelTargetRpm += ballThreeRpmAdjust;
                 launch.useVelocityControl(wheelTargetRpm);
                 sleep(1000);  // wait for wheel recovery
             }

@@ -17,9 +17,9 @@ public class AutoRedSmallZone extends AutoDrive {
 
         driveForwardInchesVel(3, drive.percentMaxRpm(0.25), 0.0, 2.0);
         sleep(50);
-        turnByDeg(-15, 2.0);
+        turnByDeg(-20, 2.0);
         sleep(50);
-        shooting(4400.0);
+        shooting(4400.0, 400, 50);
         turnToHeadingDeg(0.0, 2.0);
         sleep(50);
         driveForwardInchesVel(24, drive.percentMaxRpm(0.5), 0.0, 2.0);

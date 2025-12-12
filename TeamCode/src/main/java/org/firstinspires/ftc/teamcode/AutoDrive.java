@@ -112,7 +112,7 @@ public abstract class AutoDrive extends LinearOpMode {
     }
 
     // =========================================================
-    //  Shared shooting method
+    //  Shared shooting method - 3 Ball Sequential Shooting
     // =========================================================
 
     protected void shooting(double wheelTargetRpm) {
@@ -120,72 +120,83 @@ public abstract class AutoDrive extends LinearOpMode {
 
         final double RPM_TOLERANCE = 75.0;
         final double TIMEOUT_SEC = 10.0;
+        final double leftGateClosePosition = 0.21;
+        final double rightGateClosePosition = 0.31;
+        final double leftGateOpenPosition = 0.6;
+        final double rightGateOpenPosition = 0.5;
 
-        ElapsedTime spin = new ElapsedTime();
-        spin.reset();
+        ElapsedTime launchingTimer = new ElapsedTime();
+        launchingTimer.reset();
 
-        // Spin up immediately
+        // Boost phase
         launch.boostLaunch(1.0);
         sleep(600);
+
+        // Switch to velocity control
         launch.useVelocityControl(wheelTargetRpm);
 
-        int ballsFired = 0;
+        int ballCount = 0;
 
-        while (opModeIsActive() && spin.seconds() < TIMEOUT_SEC && ballsFired < 3) {
-            double launchSpeed = launch.currentWheelRpm();
-            double launchSpeedError = Math.abs(launchSpeed - wheelTargetRpm);
+        while (opModeIsActive() && launchingTimer.seconds() < TIMEOUT_SEC && ballCount < 3) {
+            double launchRpm = launch.currentWheelRpm();
+            double launchRpmError = Math.abs(launchRpm - wheelTargetRpm);
 
             // Wait until within tolerance
-            if (launchSpeedError > RPM_TOLERANCE) {
-                // Let PIDF keep working
+            if (launchRpmError > RPM_TOLERANCE) {
                 launch.useVelocityControl(wheelTargetRpm);
                 sleep(50);
                 continue;
             }
 
             telemetry.addData("Target RPM", wheelTargetRpm);
-            telemetry.addData("Actual RPM", "%.0f", launchSpeed);
-            telemetry.addData("RPM Error", "%.0f", launchSpeedError);
-            telemetry.addData("Balls fired", ballsFired + 1);
+            telemetry.addData("Actual RPM", "%.0f", launchRpm);
+            telemetry.addData("RPM Error", "%.0f", launchRpmError);
+            telemetry.addData("Ball", ballCount + 1);
             telemetry.update();
 
-            double rollDownPower = -0.7;
-            long rollDownTime = 500;
-            double rollUpPower = 0.8;
-            long rollUpTime = 250;
+            // Ball 1: Open gate, pause, close gate, roll up
+            if (ballCount == 0) {
+                gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
+                sleep(100);  // pause for gate to open
+                ballCount++;
 
-            // Now within tolerance: open door for ball 1 and 2
-            if (ballsFired < 2) {
-                gates.openDoor(0.6, 0.5);
-                intake.setIntakePower(rollDownPower);
-                sleep(rollDownTime);
-                intake.setIntakePower(0.0);
-                sleep(300); // short settle
-            }
+                gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
+                sleep(100);  // pause for gate to close
 
-            // last ball (3rd): push up
-            if (ballsFired == 2) {
-                rollUpTime = 500;
-                intake.setIntakePower(rollUpPower);
-                sleep(rollUpTime);
-            }
-
-            ballsFired++;
-
-            if (ballsFired == 1) {
-                gates.closeDoor(0.1, 0.2);
-                sleep(200); // a bit of time for gate to move
-                intake.setIntakePower(rollUpPower);
-                sleep(rollUpTime);
-                intake.setIntakePower(0.0);
+                intake.setIntakePower(0.9);  // nudge 2nd ball behind closed gate
                 sleep(100);
+                intake.setIntakePower(0.0);
+
+                // Adjust RPM for 2nd ball
+                wheelTargetRpm += 300;
+                launch.useVelocityControl(wheelTargetRpm);
+                sleep(1500);  // wait for wheel recovery
+            }
+            // Ball 2: Open gate, roll down, close gate
+            else if (ballCount == 1) {
+                gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
+                intake.setIntakePower(-0.6);  // roll 3rd ball down
+                sleep(300);
+                intake.setIntakePower(0.0);
+                ballCount++;
+
+                // No RPM adjustment for 3rd ball (or adjust as needed)
+                launch.useVelocityControl(wheelTargetRpm);
+                sleep(1000);  // wait for wheel recovery
+            }
+            // Ball 3: Roll up and shoot
+            else if (ballCount == 2) {
+                intake.setIntakePower(0.9);  // roll 3rd ball up
+                sleep(1500);
+                intake.setIntakePower(0.0);
+                ballCount++;
             }
         }
 
-        // Safety: stop everything and reset
+        // Reset everything
         intake.setIntakePower(0.0);
         launch.stopLaunch();
-        gates.closeDoor(0.1, 0.2);
+        gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
         walls.loosenWall(0.74, 0.7);
     }
 }

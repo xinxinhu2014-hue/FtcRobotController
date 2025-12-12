@@ -60,11 +60,14 @@ public class LauncherControl {
         double wheelRpm = Math.min(MAX_WHEEL_RPM, Math.max(MIN_WHEEL_RPM, desiredWheelRpm));
         double motorRpm = wheelRpm / GEAR_RATIO;
         double kFscale, kPadjust = 0.0;
-        if (wheelRpm > 3600) {
-            kFscale = 1.51;          // extra push only for very high RPM
+        if (wheelRpm >4200) {
+            kFscale = 1.54;          // extra push only for very high RPM
+            kPadjust = 0.15;
+        } else if (wheelRpm > 3600) {
+            kFscale = 1.42;          // extra push only for very high RPM
             kPadjust = 0.1;
         } else if (wheelRpm > 3200) {
-            kFscale = 1.52;
+            kFscale = 0.62;
             kPadjust = 0.08;
         } else {
             kFscale = 1.60;

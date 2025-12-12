@@ -21,7 +21,7 @@ public class AutoBlueSmallZone extends AutoDrive {
         //sleep(250);
         turnByDeg(15, 2.0);
         sleep(50);
-        shooting(4400.0);
+        shooting(4400.0, 200, 50);
         turnToHeadingDeg(0.0, 2.0);
         sleep(50);
         driveForwardInchesVel(24, drive.percentMaxRpm(0.5), 0.0, 2.0);

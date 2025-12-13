@@ -27,7 +27,8 @@ public abstract class AutoDrive extends LinearOpMode {
 
     // You can let each OpMode set this as needed
     protected boolean towardRight = true;
-    protected double leftGateClosePosition = 0.21, rightGateClosePosition = 0.31, leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5;
+    protected double leftGateClosePosition = 0.21, rightGateClosePosition = 0.31,
+            leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5;
 
     @Override
     public abstract void runOpMode() throws InterruptedException;

@@ -23,10 +23,10 @@ public class AutoRedBigZone extends AutoDrive {
         sleep(50);
         driveForwardInchesVel(-10, drive.percentMaxRpm(0.5), 125, 2.0);
         sleep(50);
-        shooting(3200.0, 200, 200);
+        shooting(3300.0, 100, 0);
         turnToHeadingDeg(0.0, 2.5);
         sleep(50);
-        driveForwardInchesVel(30, drive.percentMaxRpm(0.5), 0.0, 2.0);
+        driveForwardInchesVel(50, drive.percentMaxRpm(0.5), 0.0, 2.0);
         drive.stopDrive();
     }
 }

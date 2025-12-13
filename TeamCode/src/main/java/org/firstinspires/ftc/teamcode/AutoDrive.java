@@ -119,38 +119,61 @@ public abstract class AutoDrive extends LinearOpMode {
     protected void shooting(double wheelTargetRpm, double ballTwoRpmAdjust, double ballThreeRpmAdjust) {
         walls.tightenWall(0.16, 0.2);
 
-        final double RPM_TOLERANCE = 75.0;
+        double RPM_TOLERANCE = 0.05 * wheelTargetRpm;
         final double TIMEOUT_SEC = 10.0;
 
 
+
+
+        // Boost phase
+        //launch.boostLaunch(1.0);
+        //sleep(600);
+
+        // Switch to velocity control
+        //launch.useVelocityControl(wheelTargetRpm);
+
+        int ballCount = 0;
         ElapsedTime launchingTimer = new ElapsedTime();
         launchingTimer.reset();
 
-        // Boost phase
-        launch.boostLaunch(1.0);
-        sleep(600);
-
-        // Switch to velocity control
-        launch.useVelocityControl(wheelTargetRpm);
-
-        int ballCount = 0;
-
         while (opModeIsActive() && launchingTimer.seconds() < TIMEOUT_SEC && ballCount < 3) {
             double launchRpm = launch.currentWheelRpm();
-            double launchRpmError = Math.abs(launchRpm - wheelTargetRpm);
+            double launchRpmError =wheelTargetRpm - launchRpm;
+
+            telemetry.addData("Target RPM", wheelTargetRpm);
+            /*
+            telemetry.addData("Actual RPM", "%.0f", launchRpm);
+            if (launchRpmError < 0) {
+                telemetry.addData("Above target by", "%.0f", -launchRpmError);
+            } else {
+                telemetry.addData("Below target by", "%.0f", launchRpmError);
+            }
+            telemetry.update();
+             */
 
             // Wait until within tolerance
-            if (launchRpmError > RPM_TOLERANCE) {
+            if (launchRpmError > 400) {
+                launch.boostLaunch(1.0);
+                sleep(20);
+                telemetry.addData("Actual RPM", "%.0f", launchRpm);
+                telemetry.addData("Below target by", "%.0f", launchRpmError);
+                telemetry.update();
+                continue;
+            } else if (Math.abs(launchRpmError) > RPM_TOLERANCE) {
                 launch.useVelocityControl(wheelTargetRpm);
-                sleep(50);
+                sleep(20);
+                telemetry.addData("Actual RPM", "%.0f", launchRpm);
+                if (launchRpmError < 0) {
+                    telemetry.addData("Above target by", "%.0f", -launchRpmError);
+                } else {
+                    telemetry.addData("Below target by", "%.0f", launchRpmError);
+                }
+                telemetry.update();
                 continue;
             }
 
-            telemetry.addData("Target RPM", wheelTargetRpm);
-            telemetry.addData("Actual RPM", "%.0f", launchRpm);
-            telemetry.addData("RPM Error", "%.0f", launchRpmError);
+
             telemetry.addData("Ball", ballCount + 1);
-            telemetry.update();
 
             // Ball 1: Open gate, pause, close gate, roll up
             if (ballCount == 0) {
@@ -167,6 +190,7 @@ public abstract class AutoDrive extends LinearOpMode {
 
                 // Adjust RPM for 2nd ball
                 wheelTargetRpm += ballTwoRpmAdjust;
+                RPM_TOLERANCE = 0.05 * wheelTargetRpm;
                 launch.useVelocityControl(wheelTargetRpm);
                 sleep(1000);  // wait for wheel recovery
             }
@@ -180,12 +204,13 @@ public abstract class AutoDrive extends LinearOpMode {
 
                 // No RPM adjustment for 3rd ball (or adjust as needed)
                 wheelTargetRpm += ballThreeRpmAdjust;
+                RPM_TOLERANCE = 0.05 * wheelTargetRpm;
                 launch.useVelocityControl(wheelTargetRpm);
                 sleep(1000);  // wait for wheel recovery
             }
             // Ball 3: Roll up and shoot
             else if (ballCount == 2) {
-                intake.setIntakePower(0.9);  // roll 3rd ball up
+                intake.setIntakePower(0.8);  // roll 3rd ball up
                 sleep(1500);
                 intake.setIntakePower(0.0);
                 ballCount++;

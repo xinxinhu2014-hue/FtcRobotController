@@ -8,7 +8,7 @@ public class LauncherControl {
 
 
     private static final double TICKS_PER_REV = 28.0; // = 7 * 4 for NeveRest 1:1 motor
-    private static final double GEAR_RATIO = 24.0/14.0; // motor to wheel
+    private static final double GEAR_RATIO = 1.0; // motor to wheel
     private static final double MAX_MOTOR_RPM = 6600.0; // for NeveRest 1:1 motor
     private static final double MAX_WHEEL_RPM = MAX_MOTOR_RPM * GEAR_RATIO;
     private static final double MIN_WHEEL_RPM = 2000.0; // test out when shooting in shortest range

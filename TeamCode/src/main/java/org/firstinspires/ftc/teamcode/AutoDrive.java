@@ -27,7 +27,7 @@ public abstract class AutoDrive extends LinearOpMode {
 
     // You can let each OpMode set this as needed
     protected boolean towardRight = true;
-    protected double leftGateClosePosition = 0.21, rightGateClosePosition = 0.31, leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5;
+    protected double leftGateClosePosition = 0.22, rightGateClosePosition = 0.35, leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5;
 
     @Override
     public abstract void runOpMode() throws InterruptedException;
@@ -178,40 +178,44 @@ public abstract class AutoDrive extends LinearOpMode {
             // Ball 1: Open gate, pause, close gate, roll up
             if (ballCount == 0) {
                 gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
-                sleep(100);  // pause for gate to open
+                sleep(500);  // pause for gate to open
                 ballCount++;
-
+/*
                 gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
                 sleep(100);  // pause for gate to close
 
-                intake.setIntakePower(0.9);  // nudge 2nd ball behind closed gate
+                intake.setIntakePower(1.0);  // nudge 2nd ball behind closed gate
                 sleep(100);
                 intake.setIntakePower(0.0);
+
+ */
 
                 // Adjust RPM for 2nd ball
                 wheelTargetRpm += ballTwoRpmAdjust;
                 RPM_TOLERANCE = 0.05 * wheelTargetRpm;
                 launch.useVelocityControl(wheelTargetRpm);
-                sleep(1000);  // wait for wheel recovery
+                sleep(200);  // wait for wheel recovery
             }
             // Ball 2: Open gate, roll down, close gate
             else if (ballCount == 1) {
-                gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
-                intake.setIntakePower(-0.6);  // roll 3rd ball down
+                //gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
+                intake.setIntakePower(1.0);  // roll 3rd ball down
                 sleep(300);
-                intake.setIntakePower(0.0);
+                //intake.setIntakePower(0.0);
                 ballCount++;
 
                 // No RPM adjustment for 3rd ball (or adjust as needed)
                 wheelTargetRpm += ballThreeRpmAdjust;
                 RPM_TOLERANCE = 0.05 * wheelTargetRpm;
                 launch.useVelocityControl(wheelTargetRpm);
-                sleep(1000);  // wait for wheel recovery
+                walls.loosenWall(0.74, 0.7);
+                sleep(200);  // wait for wheel recovery
             }
             // Ball 3: Roll up and shoot
             else if (ballCount == 2) {
-                intake.setIntakePower(0.8);  // roll 3rd ball up
-                sleep(1500);
+                walls.tightenWall(0.16, 0.2);
+                intake.setIntakePower(1.0);  // roll 3rd ball up
+                sleep(1000);
                 intake.setIntakePower(0.0);
                 ballCount++;
             }

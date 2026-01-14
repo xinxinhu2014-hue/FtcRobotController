@@ -29,14 +29,14 @@ public class RobotOrientDrive extends OpMode {
     ElapsedTime doubleTimer = new ElapsedTime();
     final double DOUBLE_PRESS_WINDOW = 0.30;  // time allowed between presses (seconds)
 
-    ElapsedTime intakeTimer = new ElapsedTime(), rollDownTimer = new ElapsedTime(), rollUpTimer = new ElapsedTime(),
-            launchingTimer = new ElapsedTime(), wheelRecoveryTimer = new ElapsedTime(), doorClosedTimer = new ElapsedTime();
-    boolean inTimedIntakeing = false, isBallFired = false, isRolling = false, shootingNotFinish = false,
-            launchInRange = false, firstTimeInRange = false, isWheelRecovered = false, isDoorClosed = false;
+    ElapsedTime intakeTimer = new ElapsedTime(), shootPauseTimer = new ElapsedTime(), rollUpTimer = new ElapsedTime(),
+            launchingTimer = new ElapsedTime(), wheelRecoveryTimer = new ElapsedTime();
+    boolean inTimedIntakeing = false, isBallFired = false, shootingNotFinish = false,
+            launchInRange = false, firstTimeInRange = false, isWheelRecovered = false;
     int ballCount = 0;
     double boostingTime, inRangeTime = 0.0, outRangeTime = 0.0, firstInRangeTime = 0.0,
-            rollerUpWaitTime = 0.0, rollDownWaitTime = 0.0, wheelRecoverWaitTime = 0.0, doorClosedWaitTime = 0.0;
-    double leftGateClosePosition = 0.21, rightGateClosePosition = 0.31,
+            rollerUpWaitTime = 0.0, shootPauseWaitTime = 0.0, wheelRecoverWaitTime = 0.0;
+    double leftGateClosePosition = 0.22, rightGateClosePosition = 0.35,
             leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5;
     double RpmAdjustBallTwo = 0, RpmAdjustBallThree = 0, wheelRecoverTimeLimitBallTwo = 1.5, wheelRecoverTimeLimitBallThree = 1.5;
 
@@ -77,7 +77,7 @@ public class RobotOrientDrive extends OpMode {
         // left trigger: take in first 2 balls from field
         // right trigger: take balls from human player from top
         if (!inTimedIntakeing && !shootingNotFinish) {
-            intake.setIntakePower(Math.min(0.6,gamepad1.left_trigger));
+            intake.setIntakePower(Math.min(1.0,gamepad1.left_trigger));
             if (gamepad1.left_trigger > 0) {
                 wall.tightenWall(0.16, 0.2); // test out position for tightening
             } else {
@@ -231,23 +231,16 @@ public class RobotOrientDrive extends OpMode {
             gate.openDoor(leftGateOpenPosition, rightGateOpenPosition);
             ballCount = ballCount + 1;
             isBallFired = true;
-            // Wall tightens and below balls move down
+            // Wall tightens to give shooter enough space
             wall.tightenWall(0.16, 0.20);
-            //intake.setIntakePower(0.0); // below balls start moving down
-            rollDownTimer.reset(); // first ball, no rolling down. It's time pausing for close the door.
-            rollDownWaitTime = 0.1;
+            shootPauseTimer.reset(); // first ball, no rolling down. It's time pausing for close the door.
+            shootPauseWaitTime = 0.5;
         }
 
-        if (isBallFired && rollDownTimer.seconds() >= rollDownWaitTime && ballCount < 3) {
+        if (isBallFired && shootPauseTimer.seconds() >= shootPauseWaitTime && ballCount < 3) {
             isBallFired = false;
-            // Stop moving down and stay
-            intake.setIntakePower(0.0);
-            if (ballCount == 1) {
-                gate.closeDoor(leftGateClosePosition, rightGateClosePosition);
-            }
-            isDoorClosed = true;
-            doorClosedTimer.reset(); // It's time pausing for the door remained closing. Only work for first ball. After shooting 2nd ball, the door keeps open.
-            doorClosedWaitTime = 0.1;
+
+            intake.setIntakePower(1.0);
 
             if(ballCount == 1) {
                 wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallTwo); // launch RPM adjustment for 2nd ball
@@ -257,44 +250,30 @@ public class RobotOrientDrive extends OpMode {
                 wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallThree); // launch RPM adjustment for 3rd ball
                 RPM_TOLERANCE = 0.05 * wheelTargetRpm;
                 wheelRecoverWaitTime = wheelRecoverTimeLimitBallThree;
+                wall.loosenWall(0.74, 0.7);
             }
             launch.useVelocityControl(wheelTargetRpm);
             launching = true;
             wheelRecoveryTimer.reset(); // launch timeout limit if RPM tolerance cannot be reached
-        }
-
-        if (isDoorClosed && doorClosedTimer.seconds() >= doorClosedWaitTime && ballCount < 3) {
-            isDoorClosed = false;
-
-            if (ballCount == 1) { // rolling a little to nudge 2nd ball behind the closed gate
-                isRolling = true;
-                intake.setIntakePower(0.9);
-                rollUpTimer.reset();
-                rollerUpWaitTime = 0.1;
-            } else {
-                isWheelRecovered = true; // 3rd ball in the low level of the tunnel, waiting for signal of launch ready to roll up
-            }
-        }
-
-        if (isRolling && rollUpTimer.seconds() >= rollerUpWaitTime && ballCount < 3) {
-            isRolling = false; // only 2nd ball enters this section, ball ready behind the closed gate
-            intake.setIntakePower(0.0);
             isWheelRecovered = true;
         }
+
         launchRpm = launch.currentWheelRpm();
         launchRpmError = launchRpm - wheelTargetRpm;
 
         if (isWheelRecovered && (Math.abs(launchRpmError) <= RPM_TOLERANCE || wheelRecoveryTimer.seconds() >= wheelRecoverWaitTime) && ballCount < 3) {
             isWheelRecovered = false;
             if (ballCount == 1) { // gate open to let 2nd ball out, 3rd ball moving down the tunnel
-                gate.openDoor(leftGateOpenPosition, rightGateOpenPosition);
-                intake.setIntakePower(-0.6);
-                rollDownTimer.reset();
-                rollDownWaitTime = 0.3;
+                //gate.openDoor(leftGateOpenPosition, rightGateOpenPosition);
+                //intake.setIntakePower(-0.6);
+                shootPauseTimer.reset();
+                shootPauseWaitTime = 0.5;
             } else {
-                intake.setIntakePower(0.9); // 3rd ball get the signal of launch ready, start moving up the tunnel
+                //intake.setIntakePower(1); // 3rd ball get the signal of launch ready, start moving up the tunnel
+                wall.tightenWall(0.16, 0.20);
+
                 rollUpTimer.reset();
-                rollerUpWaitTime = 1.5;
+                rollerUpWaitTime = 1.0;
             }
             ballCount = ballCount + 1;
             isBallFired = true;
@@ -306,6 +285,7 @@ public class RobotOrientDrive extends OpMode {
             wall.loosenWall(0.74, 0.7);
             isBallFired = false;
             shootingNotFinish = false;
+            intake.setIntakePower(0.0);
             gate.closeDoor(leftGateClosePosition, rightGateClosePosition);
             launch.stopLaunch();
             launching = false;

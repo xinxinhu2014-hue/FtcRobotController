@@ -130,7 +130,7 @@ public class RobotOrientDrive extends OpMode {
 
         // launching flywheels: a - start launching wheel at high speed
         if (gamepad1.a && !launching) {
-            wheelTargetRpm = 4400.0; // at small launching zone
+            wheelTargetRpm = 4500.0; // at small launching zone
             RPM_TOLERANCE = 0.05 * wheelTargetRpm;
             launching = true;
             shootingType = 3;
@@ -149,7 +149,7 @@ public class RobotOrientDrive extends OpMode {
 
         // launching flywheels: b - start launching wheel at medium speed
         if (gamepad1.b && !launching) {
-            wheelTargetRpm = 3600.0; // about 50" shooting distance
+            wheelTargetRpm = 3700.0; // about 50" shooting distance
             RPM_TOLERANCE = 0.05 * wheelTargetRpm;
             launching = true;
             shootingType = 2;
@@ -169,7 +169,7 @@ public class RobotOrientDrive extends OpMode {
         // launching flywheels: x - start launching wheel at low speed
         if (gamepad1.x && !launching) {
             launching = true;
-            wheelTargetRpm = 3000.0; // about 15" shooting distance
+            wheelTargetRpm = 3100.0; // about 15" shooting distance
             RPM_TOLERANCE = 0.05 * wheelTargetRpm;
             shootingType = 1;
             launchingTimer.reset();

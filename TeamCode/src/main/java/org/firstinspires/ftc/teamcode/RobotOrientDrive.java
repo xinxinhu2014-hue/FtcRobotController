@@ -227,35 +227,36 @@ public class RobotOrientDrive extends OpMode {
         if (gamepad1.rightBumperWasPressed() && !isBallFired && !shootingNotFinish) {
             // Mark 3-ball shooting process start
             shootingNotFinish = true;
-            // Gate opens and top ball out
+            // Wall tightens to give shooter enough space
+            wall.tightenWall(0.16, 0.20);
+            // Gate opens and 1st ball out
             gate.openDoor(leftGateOpenPosition, rightGateOpenPosition);
             ballCount = ballCount + 1;
             isBallFired = true;
-            // Wall tightens to give shooter enough space
-            wall.tightenWall(0.16, 0.20);
-            shootPauseTimer.reset(); // first ball, no rolling down. It's time pausing for close the door.
+            shootPauseTimer.reset();
             shootPauseWaitTime = 0.5;
         }
 
         if (isBallFired && shootPauseTimer.seconds() >= shootPauseWaitTime && ballCount < 3) {
             isBallFired = false;
-
-            intake.setIntakePower(1.0);
-
+            // Adjust wheel RPM for the remaining balls
             if(ballCount == 1) {
                 wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallTwo); // launch RPM adjustment for 2nd ball
                 RPM_TOLERANCE = 0.05 * wheelTargetRpm;
                 wheelRecoverWaitTime = wheelRecoverTimeLimitBallTwo;
             } else {
+                intake.setIntakePower(0.0);
+                wall.loosenWall(0.74, 0.7);
                 wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallThree); // launch RPM adjustment for 3rd ball
                 RPM_TOLERANCE = 0.05 * wheelTargetRpm;
                 wheelRecoverWaitTime = wheelRecoverTimeLimitBallThree;
-                wall.loosenWall(0.74, 0.7);
             }
             launch.useVelocityControl(wheelTargetRpm);
             launching = true;
             wheelRecoveryTimer.reset(); // launch timeout limit if RPM tolerance cannot be reached
             isWheelRecovered = true;
+            // Move up the remaining balls
+            //intake.setIntakePower(1.0);
         }
 
         launchRpm = launch.currentWheelRpm();
@@ -263,15 +264,14 @@ public class RobotOrientDrive extends OpMode {
 
         if (isWheelRecovered && (Math.abs(launchRpmError) <= RPM_TOLERANCE || wheelRecoveryTimer.seconds() >= wheelRecoverWaitTime) && ballCount < 3) {
             isWheelRecovered = false;
-            if (ballCount == 1) { // gate open to let 2nd ball out, 3rd ball moving down the tunnel
-                //gate.openDoor(leftGateOpenPosition, rightGateOpenPosition);
-                //intake.setIntakePower(-0.6);
+            if (ballCount == 1) {
+                // Move up the remaining balls
+                intake.setIntakePower(1.0);
                 shootPauseTimer.reset();
-                shootPauseWaitTime = 0.5;
+                shootPauseWaitTime = 1.0;
             } else {
-                //intake.setIntakePower(1); // 3rd ball get the signal of launch ready, start moving up the tunnel
                 wall.tightenWall(0.16, 0.20);
-
+                intake.setIntakePower(1.0);
                 rollUpTimer.reset();
                 rollerUpWaitTime = 1.0;
             }
@@ -319,12 +319,14 @@ public class RobotOrientDrive extends OpMode {
             if(shootingType == 1){
                 telemetry.addLine("Close shot");
             }
+            /*
             if (launchRpmError < 0) {
                 telemetry.addData("BELOW target by: ", Math.abs(launchRpmError));
             }
             if (launchRpmError > 0) {
                 telemetry.addData("ABOVE target by: ", Math.abs(launchRpmError));
             }
+             */
             if (Math.abs(launchRpmError) <= 75) {
                 if(!launchInRange) {
                     inRangeTime = launchingTimer.seconds() - outRangeTime;
@@ -341,9 +343,11 @@ public class RobotOrientDrive extends OpMode {
                     launchInRange = false;
                 }
             }
+            /*
             telemetry.addData("Launcher is running for ", launchingTimer.seconds());
             telemetry.addData("First time in range in seconds of ", firstInRangeTime);
             telemetry.addData("In range in seconds of ", inRangeTime);
+             */
         }
         telemetry.update();
     }

@@ -12,7 +12,7 @@ public class LauncherControl {
     private static final double MAX_MOTOR_RPM = 6600.0; // for NeveRest 1:1 motor
     private static final double MAX_WHEEL_RPM = MAX_MOTOR_RPM * GEAR_RATIO;
     private static final double MIN_WHEEL_RPM = 2000.0; // test out when shooting in shortest range
-    private static final double kP = 0.04; // test out
+    private static final double kP = 0.02; // test out
     private static final double kI = 0.0; // test out
     private static final double kD = 0.2; // test out
     private static final double kF = 32767.0 / (MAX_MOTOR_RPM * TICKS_PER_REV / 60.0);

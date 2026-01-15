@@ -199,8 +199,8 @@ public abstract class AutoDrive extends LinearOpMode {
             // Ball 2: Open gate, roll down, close gate
             else if (ballCount == 1) {
                 //gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
-                intake.setIntakePower(1.0);  // roll 3rd ball down
-                sleep(300);
+                intake.setIntakePower(1.0);
+                sleep(1000);
                 //intake.setIntakePower(0.0);
                 ballCount++;
 
@@ -210,12 +210,13 @@ public abstract class AutoDrive extends LinearOpMode {
                 launch.useVelocityControl(wheelTargetRpm);
                 walls.loosenWall(0.74, 0.7);
                 sleep(200);  // wait for wheel recovery
+                walls.tightenWall(0.16, 0.2);
             }
             // Ball 3: Roll up and shoot
             else if (ballCount == 2) {
                 walls.tightenWall(0.16, 0.2);
                 intake.setIntakePower(1.0);  // roll 3rd ball up
-                sleep(1000);
+                sleep(1500);
                 intake.setIntakePower(0.0);
                 ballCount++;
             }

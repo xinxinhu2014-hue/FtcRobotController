@@ -32,7 +32,7 @@ public class RobotOrientDrive extends OpMode {
     ElapsedTime intakeTimer = new ElapsedTime(), shootPauseTimer = new ElapsedTime(), rollUpTimer = new ElapsedTime(),
             launchingTimer = new ElapsedTime(), wheelRecoveryTimer = new ElapsedTime();
     boolean inTimedIntakeing = false, isBallFired = false, shootingNotFinish = false,
-            launchInRange = false, firstTimeInRange = false, isWheelRecovered = false;
+            launchInRange = false, firstTimeInRange = false, isWheelRecovered = false, isRollerUp = false;
     int ballCount = 0;
     double boostingTime, inRangeTime = 0.0, outRangeTime = 0.0, firstInRangeTime = 0.0,
             rollerUpWaitTime = 0.0, shootPauseWaitTime = 0.0, wheelRecoverWaitTime = 0.0;
@@ -245,18 +245,15 @@ public class RobotOrientDrive extends OpMode {
                 RPM_TOLERANCE = 0.05 * wheelTargetRpm;
                 wheelRecoverWaitTime = wheelRecoverTimeLimitBallTwo;
             } else {
-                intake.setIntakePower(0.0);
-                wall.loosenWall(0.74, 0.7);
                 wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallThree); // launch RPM adjustment for 3rd ball
                 RPM_TOLERANCE = 0.05 * wheelTargetRpm;
                 wheelRecoverWaitTime = wheelRecoverTimeLimitBallThree;
+                wall.tightenWall(0.16, 0.20);
             }
             launch.useVelocityControl(wheelTargetRpm);
             launching = true;
             wheelRecoveryTimer.reset(); // launch timeout limit if RPM tolerance cannot be reached
             isWheelRecovered = true;
-            // Move up the remaining balls
-            //intake.setIntakePower(1.0);
         }
 
         launchRpm = launch.currentWheelRpm();
@@ -264,25 +261,31 @@ public class RobotOrientDrive extends OpMode {
 
         if (isWheelRecovered && (Math.abs(launchRpmError) <= RPM_TOLERANCE || wheelRecoveryTimer.seconds() >= wheelRecoverWaitTime) && ballCount < 3) {
             isWheelRecovered = false;
+            // Move up the remaining balls
+            intake.setIntakePower(1.0);
             if (ballCount == 1) {
-                // Move up the remaining balls
-                intake.setIntakePower(1.0);
-                shootPauseTimer.reset();
-                shootPauseWaitTime = 1.0;
+                rollerUpWaitTime = 0.5;
             } else {
-                wall.tightenWall(0.16, 0.20);
-                intake.setIntakePower(1.0);
-                rollUpTimer.reset();
                 rollerUpWaitTime = 1.0;
             }
+            isRollerUp = true;
+            rollUpTimer.reset();
+
+        }
+
+        if (isRollerUp && rollUpTimer.seconds() >= rollerUpWaitTime && ballCount < 3) {
+            isRollerUp = false;
+            intake.setIntakePower(0.0);
+            wall.loosenWall(0.74, 0.7);
             ballCount = ballCount + 1;
+            shootPauseWaitTime = 0.1;
             isBallFired = true;
+            shootPauseTimer.reset();
         }
 
 
         if (ballCount == 3 && rollUpTimer.seconds() > rollerUpWaitTime) { // 3-ball shooting process ends, reset everything
             ballCount = 0;
-            wall.loosenWall(0.74, 0.7);
             isBallFired = false;
             shootingNotFinish = false;
             intake.setIntakePower(0.0);

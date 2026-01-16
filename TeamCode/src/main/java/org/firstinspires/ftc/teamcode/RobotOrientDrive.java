@@ -30,12 +30,12 @@ public class RobotOrientDrive extends OpMode {
     final double DOUBLE_PRESS_WINDOW = 0.30;  // time allowed between presses (seconds)
 
     ElapsedTime intakeTimer = new ElapsedTime(), shootPauseTimer = new ElapsedTime(), rollUpTimer = new ElapsedTime(),
-            launchingTimer = new ElapsedTime(), wheelRecoveryTimer = new ElapsedTime();
+            launchingTimer = new ElapsedTime(), wheelRecoveryTimer = new ElapsedTime(), wallLoosenTimer = new ElapsedTime();
     boolean inTimedIntakeing = false, isBallFired = false, shootingNotFinish = false,
-            launchInRange = false, firstTimeInRange = false, isWheelRecovered = false, isRollerUp = false;
+            launchInRange = false, firstTimeInRange = false, isWheelRecovered = false, isRollerUp = false, isWallLoosen = false;
     int ballCount = 0;
     double boostingTime, inRangeTime = 0.0, outRangeTime = 0.0, firstInRangeTime = 0.0,
-            rollerUpWaitTime = 0.0, shootPauseWaitTime = 0.0, wheelRecoverWaitTime = 0.0;
+            rollerUpWaitTime = 0.0, shootPauseWaitTime = 0.0, wheelRecoverWaitTime = 0.0, wallLoosenWaitTime = 0.0;
     double leftGateClosePosition = 0.22, rightGateClosePosition = 0.35,
             leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5;
     double RpmAdjustBallTwo = 0, RpmAdjustBallThree = 0, wheelRecoverTimeLimitBallTwo = 1.5, wheelRecoverTimeLimitBallThree = 1.5;
@@ -169,7 +169,7 @@ public class RobotOrientDrive extends OpMode {
         // launching flywheels: x - start launching wheel at low speed
         if (gamepad1.x && !launching) {
             launching = true;
-            wheelTargetRpm = 3100.0; // about 15" shooting distance
+            wheelTargetRpm = 3300.0; // about 15" shooting distance
             RPM_TOLERANCE = 0.05 * wheelTargetRpm;
             shootingType = 1;
             launchingTimer.reset();
@@ -179,7 +179,7 @@ public class RobotOrientDrive extends OpMode {
             firstInRangeTime = 0.0;
             inRangeTime = 0.0;
             boostingTime =0.7;
-            RpmAdjustBallTwo = 200;
+            RpmAdjustBallTwo = 100;
             RpmAdjustBallThree = 0;
             wheelRecoverTimeLimitBallTwo = 1.5;
             wheelRecoverTimeLimitBallThree = 1.0;
@@ -234,27 +234,42 @@ public class RobotOrientDrive extends OpMode {
             ballCount = ballCount + 1;
             isBallFired = true;
             shootPauseTimer.reset();
-            shootPauseWaitTime = 0.5;
+            shootPauseWaitTime = 0.3;
         }
 
-        if (isBallFired && shootPauseTimer.seconds() >= shootPauseWaitTime && ballCount < 3) {
+        if (isBallFired && shootPauseTimer.seconds() >= shootPauseWaitTime && ballCount == 1) {
             isBallFired = false;
             // Adjust wheel RPM for the remaining balls
-            if(ballCount == 1) {
-                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallTwo); // launch RPM adjustment for 2nd ball
-                RPM_TOLERANCE = 0.05 * wheelTargetRpm;
-                wheelRecoverWaitTime = wheelRecoverTimeLimitBallTwo;
-            } else {
-                wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallThree); // launch RPM adjustment for 3rd ball
-                RPM_TOLERANCE = 0.05 * wheelTargetRpm;
-                wheelRecoverWaitTime = wheelRecoverTimeLimitBallThree;
-                wall.tightenWall(0.16, 0.20);
-            }
+            wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallTwo); // launch RPM adjustment for 2nd ball
+            RPM_TOLERANCE = 0.05 * wheelTargetRpm;
+            wheelRecoverWaitTime = wheelRecoverTimeLimitBallTwo;
             launch.useVelocityControl(wheelTargetRpm);
             launching = true;
             wheelRecoveryTimer.reset(); // launch timeout limit if RPM tolerance cannot be reached
             isWheelRecovered = true;
         }
+
+        if (isBallFired && shootPauseTimer.seconds() >= shootPauseWaitTime && ballCount == 2) {
+            isBallFired = false;
+            wall.loosenWall(0.74, 0.7);
+            wallLoosenWaitTime = 0.2;
+            isWallLoosen = true;
+            wallLoosenTimer.reset();
+        }
+
+        if (isWallLoosen && wallLoosenTimer.seconds() > wallLoosenWaitTime) {
+            wall.tightenWall(0.16, 0.20);
+            // Adjust wheel RPM for the remaining balls
+            wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallThree); // launch RPM adjustment for 3rd ball
+            RPM_TOLERANCE = 0.05 * wheelTargetRpm;
+            wheelRecoverWaitTime = wheelRecoverTimeLimitBallThree;
+            launch.useVelocityControl(wheelTargetRpm);
+            launching = true;
+            wheelRecoveryTimer.reset(); // launch timeout limit if RPM tolerance cannot be reached
+            isWheelRecovered = true;
+            isWallLoosen = false;
+        }
+
 
         launchRpm = launch.currentWheelRpm();
         launchRpmError = launchRpm - wheelTargetRpm;
@@ -264,25 +279,22 @@ public class RobotOrientDrive extends OpMode {
             // Move up the remaining balls
             intake.setIntakePower(1.0);
             if (ballCount == 1) {
-                rollerUpWaitTime = 0.5;
+                rollerUpWaitTime = 0.2;
             } else {
-                rollerUpWaitTime = 1.0;
+                rollerUpWaitTime = 1.5;
             }
             isRollerUp = true;
             rollUpTimer.reset();
-
         }
 
         if (isRollerUp && rollUpTimer.seconds() >= rollerUpWaitTime && ballCount < 3) {
             isRollerUp = false;
             intake.setIntakePower(0.0);
-            wall.loosenWall(0.74, 0.7);
             ballCount = ballCount + 1;
-            shootPauseWaitTime = 0.1;
+            shootPauseWaitTime = 0.3;
             isBallFired = true;
             shootPauseTimer.reset();
         }
-
 
         if (ballCount == 3 && rollUpTimer.seconds() > rollerUpWaitTime) { // 3-ball shooting process ends, reset everything
             ballCount = 0;
@@ -330,7 +342,7 @@ public class RobotOrientDrive extends OpMode {
                 telemetry.addData("ABOVE target by: ", Math.abs(launchRpmError));
             }
              */
-            if (Math.abs(launchRpmError) <= 75) {
+            if (Math.abs(launchRpmError) <= RPM_TOLERANCE) {
                 if(!launchInRange) {
                     inRangeTime = launchingTimer.seconds() - outRangeTime;
                     launchInRange = true;
@@ -346,6 +358,7 @@ public class RobotOrientDrive extends OpMode {
                     launchInRange = false;
                 }
             }
+            telemetry.addData("Ball fired:  ", ballCount);
             /*
             telemetry.addData("Launcher is running for ", launchingTimer.seconds());
             telemetry.addData("First time in range in seconds of ", firstInRangeTime);

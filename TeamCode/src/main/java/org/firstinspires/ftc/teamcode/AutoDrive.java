@@ -175,20 +175,11 @@ public abstract class AutoDrive extends LinearOpMode {
 
             telemetry.addData("Ball", ballCount + 1);
 
-            // Ball 1: Open gate, pause, close gate, roll up
+            // Ball 1: Open gate, pause
             if (ballCount == 0) {
                 gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
-                sleep(500);  // pause for gate to open
+                sleep(300);  // pause for ball out
                 ballCount++;
-/*
-                gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
-                sleep(100);  // pause for gate to close
-
-                intake.setIntakePower(1.0);  // nudge 2nd ball behind closed gate
-                sleep(100);
-                intake.setIntakePower(0.0);
-
- */
 
                 // Adjust RPM for 2nd ball
                 wheelTargetRpm += ballTwoRpmAdjust;
@@ -198,19 +189,20 @@ public abstract class AutoDrive extends LinearOpMode {
             }
             // Ball 2: Open gate, roll down, close gate
             else if (ballCount == 1) {
-                //gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
+                //roll up to send ball 2 out, then pause
                 intake.setIntakePower(1.0);
-                sleep(1000);
-                //intake.setIntakePower(0.0);
+                sleep(200);
+                intake.setIntakePower(0.0);
+                sleep(300);
                 ballCount++;
 
                 // No RPM adjustment for 3rd ball (or adjust as needed)
                 wheelTargetRpm += ballThreeRpmAdjust;
                 RPM_TOLERANCE = 0.05 * wheelTargetRpm;
                 launch.useVelocityControl(wheelTargetRpm);
+                // Loose the wall to let ball 3 down
                 walls.loosenWall(0.74, 0.7);
                 sleep(200);  // wait for wheel recovery
-                walls.tightenWall(0.16, 0.2);
             }
             // Ball 3: Roll up and shoot
             else if (ballCount == 2) {

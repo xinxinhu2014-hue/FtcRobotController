@@ -67,7 +67,7 @@ public class LauncherControl {
             kFscale = 1.42;          // extra push only for very high RPM
             kPadjust = 0.1;
         } else if (wheelRpm > 3200) {
-            kFscale = 1.40;
+            kFscale = 1.232;
             kPadjust = 0.08;
         } else {
             kFscale = 1.35;

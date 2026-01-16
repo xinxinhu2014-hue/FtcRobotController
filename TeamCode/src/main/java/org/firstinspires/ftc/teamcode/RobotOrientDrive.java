@@ -188,7 +188,7 @@ public class RobotOrientDrive extends OpMode {
         if (launching) {
             launchRpm = launch.currentWheelRpm();
             launchRpmError = wheelTargetRpm - launchRpm;
-            if (launchRpmError > 200) {
+            if (launchRpmError > 400) {
                 // boost phase
                 launch.boostLaunch(1.0);
             } else {

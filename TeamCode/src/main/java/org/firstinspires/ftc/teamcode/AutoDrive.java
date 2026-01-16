@@ -112,6 +112,18 @@ public abstract class AutoDrive extends LinearOpMode {
         turnToHeadingDeg(target, timeoutSec);
     }
 
+    // ==========================================================
+    // Intake 3 balls
+    // ==========================================================
+
+    protected void intaking(double inches, double baseRPM, double targetDeg, double timeoutSec,  long intakeTime) {
+        intake.setIntakePower(1.0);
+        walls.tightenWall(0.16, 0.2); // test out position for tightening
+        driveForwardInchesVel(inches, baseRPM, targetDeg, timeoutSec);
+        sleep(intakeTime);
+        intake.setIntakePower(0.0);
+    }
+
     // =========================================================
     //  Shared shooting method - 3 Ball Sequential Shooting
     // =========================================================

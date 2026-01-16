@@ -61,16 +61,16 @@ public class LauncherControl {
         double motorRpm = wheelRpm / GEAR_RATIO;
         double kFscale, kPadjust = 0.0;
         if (wheelRpm >4200) {
-            kFscale = 1.44;          // extra push only for very high RPM
+            kFscale = 1.168;          // extra push only for very high RPM
             kPadjust = 0.15;
         } else if (wheelRpm > 3600) {
-            kFscale = 1.42;          // extra push only for very high RPM
+            kFscale = 1.16;          // extra push only for very high RPM
             kPadjust = 0.1;
         } else if (wheelRpm > 3200) {
-            kFscale = 1.232;
+            kFscale = 1.145;
             kPadjust = 0.08;
         } else {
-            kFscale = 1.35;
+            kFscale = 1.12;
             kPadjust = 0.04;
         }
         for (int i = 0; i < 2; i++) {

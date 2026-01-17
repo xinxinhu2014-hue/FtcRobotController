@@ -208,11 +208,11 @@ public class MecanumDrive {
         }
     }
 
-    public boolean turnAdjustYawErr(double yawErr) {
+    public boolean turnAdjustYawErr(double yawErr, double velPercent) {
         double err = angleWrapDeg(yawErr);
 
         // Proportional velocity command (scale by MAX_MOTOR_TICKS_PER_SEC)
-        double turnVel = kP_TURN * Math.abs(err) * MAX_MOTOR_TICKS_PER_SEC;
+        double turnVel = kP_TURN * Math.abs(err) * MAX_MOTOR_TICKS_PER_SEC * velPercent;
 
         // ensure we overcome stiction but don’t exceed limits
         if (Math.abs(err) > TOLERANCE_DEG) {

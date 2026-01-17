@@ -70,7 +70,7 @@ public class LauncherControl {
             kFscale = 1.145;
             kPadjust = 0.08;
         } else {
-            kFscale = 1.12;
+            kFscale = 1.045;
             kPadjust = 0.04;
         }
         for (int i = 0; i < 2; i++) {

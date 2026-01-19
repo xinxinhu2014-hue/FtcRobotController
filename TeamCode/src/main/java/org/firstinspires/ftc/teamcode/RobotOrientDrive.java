@@ -37,7 +37,8 @@ public class RobotOrientDrive extends OpMode {
     double boostingTime, inRangeTime = 0.0, outRangeTime = 0.0, firstInRangeTime = 0.0,
             rollerUpWaitTime = 0.0, shootPauseWaitTime = 0.0, wheelRecoverWaitTime = 0.0, wallLoosenWaitTime = 0.0;
     double leftGateClosePosition = 0.22, rightGateClosePosition = 0.35,
-            leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5;
+            leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5,
+            leftWallLoosePosition = 0.74, rightWallLoosePosition = 0.7, leftWallTightPosition = 0.14, rightWallTightPosition = 0.18;
     double RpmAdjustBallTwo = 0, RpmAdjustBallThree = 0, wheelRecoverTimeLimitBallTwo = 1.5, wheelRecoverTimeLimitBallThree = 1.5;
 
     @Override
@@ -53,7 +54,7 @@ public class RobotOrientDrive extends OpMode {
     @Override
     public void start() {
         gate.closeDoor(leftGateClosePosition, rightGateClosePosition);
-        wall.loosenWall(0.74, 0.7);
+        wall.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
     }
 
     private double dead(double v){
@@ -79,9 +80,9 @@ public class RobotOrientDrive extends OpMode {
         if (!inTimedIntakeing && !shootingNotFinish) {
             intake.setIntakePower(Math.min(1.0,gamepad1.left_trigger));
             if (gamepad1.left_trigger > 0) {
-                wall.tightenWall(0.16, 0.2); // test out position for tightening
+                wall.tightenWall(leftWallTightPosition, rightWallTightPosition); // test out position for tightening
             } else {
-                wall.loosenWall(0.74, 0.7); // test out position for loosening
+                wall.loosenWall(leftWallLoosePosition, rightWallLoosePosition); // test out position for loosening
             }
         }
 
@@ -201,7 +202,7 @@ public class RobotOrientDrive extends OpMode {
         if (gamepad1.y && launching) {
             launch.stopLaunch();
             ballCount = 0;
-            wall.loosenWall(0.74, 0.7);
+            wall.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
             isBallFired = false;
             shootingNotFinish = false;
             gate.closeDoor(leftGateClosePosition, rightGateClosePosition);
@@ -228,7 +229,7 @@ public class RobotOrientDrive extends OpMode {
             // Mark 3-ball shooting process start
             shootingNotFinish = true;
             // Wall tightens to give shooter enough space
-            wall.tightenWall(0.16, 0.20);
+            wall.tightenWall(leftWallTightPosition, rightWallTightPosition);
             // Gate opens and 1st ball out
             gate.openDoor(leftGateOpenPosition, rightGateOpenPosition);
             ballCount = ballCount + 1;
@@ -251,14 +252,14 @@ public class RobotOrientDrive extends OpMode {
 
         if (isBallFired && shootPauseTimer.seconds() >= shootPauseWaitTime && ballCount == 2) {
             isBallFired = false;
-            wall.loosenWall(0.74, 0.7);
+            wall.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
             wallLoosenWaitTime = 0.2;
             isWallLoosen = true;
             wallLoosenTimer.reset();
         }
 
         if (isWallLoosen && wallLoosenTimer.seconds() > wallLoosenWaitTime) {
-            wall.tightenWall(0.16, 0.20);
+            wall.tightenWall(leftWallTightPosition, rightWallTightPosition);
             // Adjust wheel RPM for the remaining balls
             wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallThree); // launch RPM adjustment for 3rd ball
             RPM_TOLERANCE = 0.05 * wheelTargetRpm;

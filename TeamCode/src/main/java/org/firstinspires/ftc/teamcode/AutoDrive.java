@@ -27,7 +27,8 @@ public abstract class AutoDrive extends LinearOpMode {
 
     // You can let each OpMode set this as needed
     protected boolean towardRight = true;
-    protected double leftGateClosePosition = 0.22, rightGateClosePosition = 0.35, leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5;
+    protected double leftGateClosePosition = 0.22, rightGateClosePosition = 0.35, leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5,
+            leftWallLoosePosition = 0.74, rightWallLoosePosition = 0.7, leftWallTightPosition = 0.14, rightWallTightPosition = 0.18;
 
     @Override
     public abstract void runOpMode() throws InterruptedException;
@@ -45,7 +46,7 @@ public abstract class AutoDrive extends LinearOpMode {
 
         // Default start positions – same as your old code
         gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
-        walls.loosenWall(0.74, 0.7);
+        walls.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
     }
 
     // =========================================================
@@ -118,7 +119,7 @@ public abstract class AutoDrive extends LinearOpMode {
 
     protected void intaking(double inches, double baseRPM, double targetDeg, double timeoutSec,  long intakeTime) {
         intake.setIntakePower(1.0);
-        walls.tightenWall(0.16, 0.2); // test out position for tightening
+        walls.tightenWall(leftWallTightPosition , rightWallTightPosition); // test out position for tightening
         driveForwardInchesVel(inches, baseRPM, targetDeg, timeoutSec);
         sleep(intakeTime);
         intake.setIntakePower(0.0);
@@ -129,7 +130,7 @@ public abstract class AutoDrive extends LinearOpMode {
     // =========================================================
 
     protected void shooting(double wheelTargetRpm, double ballTwoRpmAdjust, double ballThreeRpmAdjust) {
-        walls.tightenWall(0.16, 0.2);
+        walls.tightenWall(leftWallTightPosition, rightWallTightPosition);
 
         double RPM_TOLERANCE = 0.05 * wheelTargetRpm;
         final double TIMEOUT_SEC = 10.0;
@@ -217,13 +218,13 @@ public abstract class AutoDrive extends LinearOpMode {
                 RPM_TOLERANCE = 0.05 * wheelTargetRpm;
                 launch.useVelocityControl(wheelTargetRpm);
                 // Loose the wall to let ball 3 down
-                walls.loosenWall(0.74, 0.7);
+                walls.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
                 sleep(500);  // wait for wheel recovery
-                walls.tightenWall(0.16, 0.2);
+                walls.tightenWall(leftWallTightPosition, rightWallTightPosition);
             }
             // Ball 3: Roll up and shoot
             else if (ballCount == 2) {
-                walls.tightenWall(0.16, 0.2);
+                walls.tightenWall(leftWallTightPosition, rightWallTightPosition);
                 intake.setIntakePower(1.0);  // roll 3rd ball up
                 sleep(1500);
                 intake.setIntakePower(0.0);
@@ -246,6 +247,7 @@ public abstract class AutoDrive extends LinearOpMode {
         intake.setIntakePower(0.0);
         launch.stopLaunch();
         gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
-        walls.loosenWall(0.74, 0.7);
+        walls.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
     }
+
 }

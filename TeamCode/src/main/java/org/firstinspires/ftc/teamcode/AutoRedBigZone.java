@@ -21,9 +21,9 @@ public class AutoRedBigZone extends AutoDrive {
         sleep(50);
         turnByDeg(125, 2.0, 0.3);
         sleep(50);
-        driveForwardInchesVel(-20, drive.percentMaxRpm(0.3), 125, 2.0);
+        driveForwardInchesVel(-15, drive.percentMaxRpm(0.3), 125, 2.0);
         sleep(50);
-        shooting(3200.0, 100, -100);
+        shooting(3400.0, 0, -100);
         sleep(500);
         turnToHeadingDeg(0.0, 2.5, .3);
         sleep(50);

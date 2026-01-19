@@ -20,9 +20,9 @@ public class AutoBlueBigZone extends AutoDrive {
 
         driveForwardInchesVel(30, drive.percentMaxRpm(0.5), 0.0, 2.0);
         sleep(50);
-        turnByDeg(-130, 2.0, 0.3);
+        turnByDeg(-125, 2.0, 0.3);
         sleep(50);
-        driveForwardInchesVel(-10, drive.percentMaxRpm(0.5), 130, 2.0);
+        driveForwardInchesVel(-10, drive.percentMaxRpm(0.5), 125, 2.0);
         sleep(50);
         shooting(3300.0, 100, 0);
         sleep(500);

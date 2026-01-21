@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.mechanisms;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 public class LauncherControl {
 
@@ -17,12 +18,15 @@ public class LauncherControl {
     private static final double kD = 0.2; // test out
     private static final double kF = 32767.0 / (MAX_MOTOR_RPM * TICKS_PER_REV / 60.0);
     private DcMotorEx[] launchMotors = new DcMotorEx[2];
+    private VoltageSensor batteryVoltageSensor;
+
 
 
 
     public void init(HardwareMap hardwareMap){
         launchMotors[0] = hardwareMap.get(DcMotorEx.class, "FrontLaunch");
         launchMotors[1] = hardwareMap.get(DcMotorEx.class, "BackLaunch");
+        batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
         for (int i = 0; i <2; i++)  {
             launchMotors[i].setDirection(DcMotor.Direction.REVERSE);
             launchMotors[i].setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -46,6 +50,11 @@ public class LauncherControl {
         }
     }
 
+    private double getBatteryVoltage() {
+        double v = batteryVoltageSensor.getVoltage();
+        return Math.max(v, 11.0); // safety clamp
+    }
+
     public void boostLaunch(double power) {
         for (int i = 0; i < 2; i++) {
             if (launchMotors[i].getMode() != DcMotor.RunMode.RUN_WITHOUT_ENCODER) {
@@ -59,9 +68,10 @@ public class LauncherControl {
     public void useVelocityControl(double desiredWheelRpm) {
         double wheelRpm = Math.min(MAX_WHEEL_RPM, Math.max(MIN_WHEEL_RPM, desiredWheelRpm));
         double motorRpm = wheelRpm / GEAR_RATIO;
+        double voltage = getBatteryVoltage();
         double kFscale, kPadjust = 0.0;
         if (wheelRpm >4200) {
-            kFscale = 1.168;          // extra push only for very high RPM
+            kFscale = 1.208;          // extra push only for very high RPM
             kPadjust = 0.15;
         } else if (wheelRpm > 3600) {
             kFscale = 1.16;          // extra push only for very high RPM
@@ -73,11 +83,12 @@ public class LauncherControl {
             kFscale = 1.045;
             kPadjust = 0.04;
         }
+        double compensatedKF = kF * kFscale;
         for (int i = 0; i < 2; i++) {
             if (launchMotors[i].getMode() != DcMotor.RunMode.RUN_USING_ENCODER) {
                 launchMotors[i].setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             }
-            launchMotors[i].setVelocityPIDFCoefficients(kP + kPadjust, kI, kD, kF * kFscale);
+            launchMotors[i].setVelocityPIDFCoefficients(kP + kPadjust, kI, kD, compensatedKF);
             launchMotors[i].setVelocity(rpmToTicksPerSec(motorRpm));
         }
     }

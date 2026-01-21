@@ -17,17 +17,19 @@ public class AutoRedBigZone extends AutoDrive {
         if (isStopRequested()) return;
         robotYaw.resetYaw();
 
+
         driveForwardInchesVel(30, drive.percentMaxRpm(0.3), 0.0, 2.0);
         sleep(50);
         turnByDeg(125, 2.0, 0.3);
         sleep(50);
         driveForwardInchesVel(-15, drive.percentMaxRpm(0.3), 125, 2.0);
         sleep(50);
-        shooting(3400.0, 0, -100);
+
+        shooting(3050.0, 0, -100);
         sleep(500);
-        turnToHeadingDeg(0.0, 2.5, .3);
-        sleep(50);
-        driveForwardInchesVel(50, drive.percentMaxRpm(0.5), 0.0, 2.0);
+        //turnToHeadingDeg(0.0, 2.5, .3);
+        //sleep(50);
+        //driveForwardInchesVel(50, drive.percentMaxRpm(0.5), 0.0, 2.0);
         drive.stopDrive();
     }
 }

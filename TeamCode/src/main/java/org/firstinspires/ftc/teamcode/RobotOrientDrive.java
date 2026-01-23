@@ -34,10 +34,11 @@ public class RobotOrientDrive extends OpMode {
             isSingleBallShooting = false, isBallReady = false;
     int ballCount = 0, isHere = 0;
     double inRangeTime = 0.0, outRangeTime = 0.0, firstInRangeTime = 0.0,
-            rollerUpWaitTime = 0.0, shootPauseWaitTime = 0.0, wheelRecoverWaitTime = 0.0, wallLoosenWaitTime = 0.0;
-    double leftGateClosePosition = 0.22, rightGateClosePosition = 0.35,
-            leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5,
-            leftWallLoosePosition = 0.74, rightWallLoosePosition = 0.7, leftWallTightPosition = 0.14, rightWallTightPosition = 0.18;
+            rollerUpWaitTime = 0.0, shootPauseWaitTime = 0.0, wheelRecoverTimeOut = 1.5, wallLoosenWaitTime = 0.0;
+    double leftGateClosePosition = 0.21, rightGateClosePosition = 0.34,
+            leftGateOpenPosition = 0.75, rightGateOpenPosition = 0.62,
+            leftWallLoosePosition = 0.86, rightWallLoosePosition = 0.82,
+            leftWallTightPosition = 0.0, rightWallTightPosition = 0.04;
     double RpmAdjustBallTwo = 0, RpmAdjustBallThree = 0, wheelRecoverTimeLimitBallTwo = 1.5, wheelRecoverTimeLimitBallThree = 3.0;
 
     @Override
@@ -81,15 +82,15 @@ public class RobotOrientDrive extends OpMode {
         // left trigger: take in first 2 balls from field
         if (!isTimedIntakeing && !isMultiBallShooting) {
             intake.setIntakePower(Math.min(1.0,gamepad1.left_trigger));
-            if (gamepad1.left_trigger > 0) {
+            /*if (gamepad1.left_trigger > 0) {
                 wall.tightenWall(leftWallTightPosition, rightWallTightPosition); // test out position for tightening
             } else {
                 wall.loosenWall(leftWallLoosePosition, rightWallLoosePosition); // test out position for loosening
-            }
+            }*/
         }
 
         // left bumper: run intake for 0.2 second.
-        if (gamepad1.leftBumperWasPressed() && !isTimedIntakeing) {
+        /*if (gamepad1.leftBumperWasPressed() && !isTimedIntakeing) {
             isTimedIntakeing = true;
             intakeTimer.reset();
             //wall.tightenWall(0.16, 0.2); // test out position for tightening
@@ -99,7 +100,13 @@ public class RobotOrientDrive extends OpMode {
         if (isTimedIntakeing && intakeTimer.seconds() >= 0.2) {
             intake.setIntakePower(0.0);             // Stop motor
             isTimedIntakeing = false;
-        }
+        }*/
+
+        /*if (gamepad1.left_bumper) {
+            wall.tightenWall(leftWallTightPosition, rightWallTightPosition);
+        } else {
+            wall.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
+        }*/
 
 
 
@@ -189,8 +196,8 @@ public class RobotOrientDrive extends OpMode {
             firstTimeInRange = false;
             firstInRangeTime = 0.0;
             inRangeTime = 0.0;
-            RpmAdjustBallTwo = 100;
-            RpmAdjustBallThree = 0;
+            RpmAdjustBallTwo = 0;
+            RpmAdjustBallThree = 200;
             wheelRecoverTimeLimitBallTwo = 1.5;
             wheelRecoverTimeLimitBallThree = 1.0;
         }
@@ -259,90 +266,63 @@ public class RobotOrientDrive extends OpMode {
 
 
         // 3 balls shooting
-        // use Right Bumper
+        // use Right Bumper: press till seeing the first ball out then release
         if (gamepad1.right_bumper && isWheelReady && !isBallFired && !isMultiBallShooting && !isSingleBallShooting && isBallReady) {
-            // Mark 3-ball shooting process start
-            isMultiBallShooting = true;
-            isBallReady = false;
-            // Wall tightens to give shooter enough space
-            wall.tightenWall(leftWallTightPosition, rightWallTightPosition);
+            isMultiBallShooting = true; // Mark 3-ball shooting process start
             // Gate opens and 1st ball out
             gate.openDoor(leftGateOpenPosition, rightGateOpenPosition);
             ballCount = ballCount + 1;
-            isBallFired = true;
-            shootPauseTimer.reset();
-            shootPauseWaitTime = 0.3;
-            isWheelReady = false;
-            settleCount = 0;
+            isBallFired = true; // current ball is fired
+            isBallReady = false; // next ball is not ready
+            isWheelReady = false; // wheel for next ball fire is not ready
+            settleCount = 0; // initiate the status for starting the process of reaching desired wheel speed for next ball
+            shootPauseWaitTime = 0.3; // the pause for next shoot in order to recover the wheel speed
+            shootPauseTimer.reset(); // start the timing for shoot pausing
         }
 
-        if (isBallFired && !isBallReady && shootPauseTimer.seconds() >= shootPauseWaitTime && ballCount == 1) {
-            isBallFired = false;
-            isBallReady = true;
-            // Adjust wheel RPM for the remaining balls
-            //wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallTwo); // launch RPM adjustment for 2nd ball
-            //rpmTolerance = 0.05 * wheelTargetRpm;
-            wheelRecoverWaitTime = wheelRecoverTimeLimitBallTwo;
-            //launch.useVelocityControl(wheelTargetRpm);
-            launching = true;
-            wheelRecoveryTimer.reset(); // launch timeout limit if RPM tolerance cannot be reached
-            //isWheelReady = true;
-        }
+        if (isBallFired && !isBallReady && shootPauseTimer.seconds() >= shootPauseWaitTime && ballCount < 3) {
+            gate.closeDoor(leftGateClosePosition, rightGateClosePosition); // close the gate after the previous ball out
+            isBallFired = false; // current ball is not fired
+            isBallReady = true; // the current ball is ready
+            wheelRecoverTimeOut = 1.0; // the time out if wheel cannot fully recovered, shoot the ball no matter what speed
 
-        if (isBallFired && !isBallReady && shootPauseTimer.seconds() >= shootPauseWaitTime && ballCount == 2) {
-            isBallFired = false;
-            wall.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
-            wallLoosenWaitTime = 0.2;
-            isWallLoosen = true;
-            wallLoosenTimer.reset();
-        }
-
-        if (isWallLoosen && !isBallReady && wallLoosenTimer.seconds() > wallLoosenWaitTime) {
-            isBallReady = true;
-            wall.tightenWall(leftWallTightPosition, rightWallTightPosition);
-            // Adjust wheel RPM for the remaining balls
-            //wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallThree); // launch RPM adjustment for 3rd ball
-            //rpmTolerance = 0.05 * wheelTargetRpm;
-            wheelRecoverWaitTime = wheelRecoverTimeLimitBallThree;
-            //launch.useVelocityControl(wheelTargetRpm);
-            launching = true;
-            wheelRecoveryTimer.reset(); // launch timeout limit if RPM tolerance cannot be reached
-            //isWheelReady = true;
-            isWallLoosen = false;
-        }
-
-
-        if (isBallReady && isMultiBallShooting && (wheelReadyEdge || wheelRecoveryTimer.seconds() >= wheelRecoverWaitTime) && ballCount < 3) {
-            isBallReady = false;
-            isWheelReady = false;
-            settleCount = 0;
-            // Move up the remaining balls
-            intake.setIntakePower(1.0);
-            if (ballCount == 1) {
-                rollerUpWaitTime = 0.2;
+            /*if (ballCount == 1) {
+                wheelRecoverTimeOut = wheelRecoverTimeLimitBallTwo;
             } else {
-                rollerUpWaitTime = 1.5;
+                wheelRecoverTimeOut = wheelRecoverTimeLimitBallThree;
+                //wheelTargetRpm = launch.adjustLaunchRpm(wheelTargetRpm, RpmAdjustBallThree);
+                //rpmTolerance = 0.05 * wheelTargetRpm;
+                //launch.useVelocityControl(wheelTargetRpm);
+            }*/
+
+            launching = true; // reconfirm the wheel is still launching
+            wheelRecoveryTimer.reset(); // start the timing for wheel recovery
+        }
+
+
+        if (isBallReady && isMultiBallShooting && (wheelReadyEdge || wheelRecoveryTimer.seconds() >= wheelRecoverTimeOut) && ballCount < 3) {
+            if (ballCount == 1) {
+                intake.setIntakePower(1.0); // start the intake wheel to move the remaining balls
+                gate.openDoor(leftGateOpenPosition, rightGateOpenPosition); // Gate open to let 2nd ball out
+                shootPauseWaitTime = 0.3; // the pause for 3rd ball shooting in order to recover the wheel speed
+            } else {
+                wall.tightenWall(leftWallTightPosition, rightWallTightPosition); // Tight the wall to give 3rd ball enough space fall out
+                shootPauseWaitTime = 1.0; // the significant pause to finishing te 3rd ball shooting since its shooting mechanism is different
             }
-            isRollerUp = true;
-            rollUpTimer.reset();
-        }
-
-        if (isRollerUp && rollUpTimer.seconds() >= rollerUpWaitTime && ballCount < 3) {
-            isHere++;
-            isRollerUp = false;
-            intake.setIntakePower(0.0);
             ballCount = ballCount + 1;
-            shootPauseWaitTime = 0.3;
-            isBallFired = true;
-            shootPauseTimer.reset();
+            isBallFired = true; // current ball is fired
+            isBallReady = false; // next ball is not ready
+            isWheelReady = false; // wheel for next ball fire is not ready
+            settleCount = 0; // initiate the status for starting the process of reaching desired wheel speed for next ball
+            shootPauseTimer.reset(); // start the timing for shoot pausing
         }
 
-        if (ballCount == 3 && rollUpTimer.seconds() > rollerUpWaitTime) { // 3-ball shooting process ends, reset everything
+
+        if (ballCount == 3 && shootPauseTimer.seconds() > shootPauseWaitTime) { // 3-ball shooting process ends, reset everything
             ballCount = 0;
             isBallFired = false;
             isMultiBallShooting = false;
             intake.setIntakePower(0.0);
-            gate.closeDoor(leftGateClosePosition, rightGateClosePosition);
             wall.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
             launch.stopLaunch();
             launching = false;
@@ -365,17 +345,15 @@ public class RobotOrientDrive extends OpMode {
         if (!isSingleBallShooting && !isMultiBallShooting && launching) {
             if (gamepad1.right_trigger > 0.7) {
                 isSingleBallShooting = true;
-                wall.tightenWall(leftWallTightPosition, rightWallTightPosition);
                 intake.setIntakePower(1.0);
             }
         }
 
         if (isSingleBallShooting && !isMultiBallShooting && launching) {
             if (isWheelReady) {
-                gate.openDoor(leftGateOpenPosition, rightGateOpenPosition);
+                wall.tightenWall(leftWallTightPosition, rightWallTightPosition);
             }
             if (gamepad1.right_trigger < 0.2) {
-                gate.closeDoor(leftGateClosePosition, rightGateClosePosition);
                 wall.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
                 intake.setIntakePower(0.0);
                 launch.stopLaunch();

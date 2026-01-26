@@ -80,7 +80,7 @@ public class RobotOrientDrive extends OpMode {
 
         // intake
         // left trigger: take in first 2 balls from field
-        if (!isTimedIntakeing && !isMultiBallShooting) {
+        if (!isSingleBallShooting && !isMultiBallShooting) {
             intake.setIntakePower(Math.min(1.0,gamepad1.left_trigger));
             /*if (gamepad1.left_trigger > 0) {
                 wall.tightenWall(leftWallTightPosition, rightWallTightPosition); // test out position for tightening
@@ -281,7 +281,7 @@ public class RobotOrientDrive extends OpMode {
         }
 
         if (isBallFired && !isBallReady && shootPauseTimer.seconds() >= shootPauseWaitTime && ballCount < 3) {
-            gate.closeDoor(leftGateClosePosition, rightGateClosePosition); // close the gate after the previous ball out
+            //gate.closeDoor(leftGateClosePosition, rightGateClosePosition); // close the gate after the previous ball out
             isBallFired = false; // current ball is not fired
             isBallReady = true; // the current ball is ready
             wheelRecoverTimeOut = 1.0; // the time out if wheel cannot fully recovered, shoot the ball no matter what speed
@@ -303,7 +303,7 @@ public class RobotOrientDrive extends OpMode {
         if (isBallReady && isMultiBallShooting && (wheelReadyEdge || wheelRecoveryTimer.seconds() >= wheelRecoverTimeOut) && ballCount < 3) {
             if (ballCount == 1) {
                 intake.setIntakePower(1.0); // start the intake wheel to move the remaining balls
-                gate.openDoor(leftGateOpenPosition, rightGateOpenPosition); // Gate open to let 2nd ball out
+                //gate.openDoor(leftGateOpenPosition, rightGateOpenPosition); // Gate open to let 2nd ball out
                 shootPauseWaitTime = 0.3; // the pause for 3rd ball shooting in order to recover the wheel speed
             } else {
                 wall.tightenWall(leftWallTightPosition, rightWallTightPosition); // Tight the wall to give 3rd ball enough space fall out
@@ -324,6 +324,7 @@ public class RobotOrientDrive extends OpMode {
             isMultiBallShooting = false;
             intake.setIntakePower(0.0);
             wall.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
+            gate.closeDoor(leftGateClosePosition, rightGateClosePosition);
             launch.stopLaunch();
             launching = false;
             boosting = false;

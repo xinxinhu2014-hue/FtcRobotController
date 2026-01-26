@@ -27,8 +27,10 @@ public abstract class AutoDrive extends LinearOpMode {
 
     // You can let each OpMode set this as needed
     protected boolean towardRight = true;
-    protected double leftGateClosePosition = 0.22, rightGateClosePosition = 0.35, leftGateOpenPosition = 0.6, rightGateOpenPosition = 0.5,
-            leftWallLoosePosition = 0.74, rightWallLoosePosition = 0.7, leftWallTightPosition = 0.14, rightWallTightPosition = 0.18;
+    protected double leftGateClosePosition = 0.21, rightGateClosePosition = 0.34,
+            leftGateOpenPosition = 0.75, rightGateOpenPosition = 0.62,
+            leftWallLoosePosition = 0.86, rightWallLoosePosition = 0.82,
+            leftWallTightPosition = 0.0, rightWallTightPosition = 0.04;
 
     @Override
     public abstract void runOpMode() throws InterruptedException;
@@ -119,9 +121,9 @@ public abstract class AutoDrive extends LinearOpMode {
 
     protected void intaking(double inches, double baseRPM, double targetDeg, double timeoutSec,  long intakeTime) {
         intake.setIntakePower(1.0);
-        walls.tightenWall(leftWallTightPosition , rightWallTightPosition); // test out position for tightening
+        //walls.tightenWall(leftWallTightPosition , rightWallTightPosition); // test out position for tightening
         driveForwardInchesVel(inches, baseRPM, targetDeg, timeoutSec);
-        sleep(intakeTime);
+        //sleep(intakeTime);
         intake.setIntakePower(0.0);
     }
 
@@ -140,6 +142,7 @@ public abstract class AutoDrive extends LinearOpMode {
         int ballCount = 0;
         double tol = 0.05 * wheelTargetRpm;
         boolean boosting = false;
+        int settleCount = 0;
 
 
         ElapsedTime launchingTimer = new ElapsedTime();
@@ -151,12 +154,12 @@ public abstract class AutoDrive extends LinearOpMode {
 
             telemetry.addData("Target RPM", wheelTargetRpm);
 
-            telemetry.addData("Actual RPM", "%.0f", launchRpm);
+            /*telemetry.addData("Actual RPM", "%.0f", launchRpm);
             if (launchRpmError < 0) {
                 telemetry.addData("Above target by", "%.0f", -launchRpmError);
             } else {
                 telemetry.addData("Below target by", "%.0f", launchRpmError);
-            }
+            }*/
             telemetry.update();
 
 
@@ -167,9 +170,9 @@ public abstract class AutoDrive extends LinearOpMode {
                     boosting = true;
                 }
                 sleep(20);
-                telemetry.addData("Actual RPM", "%.0f", launchRpm);
+                /*telemetry.addData("Actual RPM", "%.0f", launchRpm);
                 telemetry.addData("Below target by", "%.0f", launchRpmError);
-                telemetry.update();
+                telemetry.update();*/
                 continue;
             }
 
@@ -180,7 +183,7 @@ public abstract class AutoDrive extends LinearOpMode {
 
             if (Math.abs(launchRpmError) > tol) {
                 sleep(20);
-                telemetry.addData("Actual RPM", "%.0f", launchRpm);
+                //telemetry.addData("Actual RPM", "%.0f", launchRpm);
                 /*
                 if (launchRpmError < 0) {
                     telemetry.addData("Above target by", "%.0f", -launchRpmError);
@@ -188,8 +191,16 @@ public abstract class AutoDrive extends LinearOpMode {
                     telemetry.addData("Below target by", "%.0f", launchRpmError);
                 }
                 */
-                telemetry.update();
+                //telemetry.update();
                 continue;
+            } else {
+                settleCount++;
+            }
+
+            if (settleCount <= SETTLE_LOOPS) {
+                continue;
+            } else {
+                settleCount = 0;
             }
 
 
@@ -205,34 +216,27 @@ public abstract class AutoDrive extends LinearOpMode {
                 // Adjust RPM for 2nd ball
                 wheelTargetRpm += ballTwoRpmAdjust;
                 tol = 0.05 * wheelTargetRpm;
-                launch.useVelocityControl(wheelTargetRpm);
-                sleep(200);  // wait for wheel recovery
-
+                //gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
+                //launch.useVelocityControl(wheelTargetRpm);
             }
             // Ball 2: Open gate, roll down, close gate
             else if (ballCount == 1) {
                 //roll up to send ball 2 out, then pause
                 intake.setIntakePower(1.0);
+                //gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
                 sleep(500);
-                intake.setIntakePower(0.0);
-                sleep(300);
                 ballCount++;
 
                 // No RPM adjustment for 3rd ball (or adjust as needed)
                 wheelTargetRpm += ballThreeRpmAdjust;
                 tol = 0.05 * wheelTargetRpm;
-                launch.useVelocityControl(wheelTargetRpm);
-                // Loose the wall to let ball 3 down
-                walls.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
-                sleep(500);  // wait for wheel recovery
-                walls.tightenWall(leftWallTightPosition, rightWallTightPosition);
+                //gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
+                //launch.useVelocityControl(wheelTargetRpm);
             }
             // Ball 3: Roll up and shoot
             else if (ballCount == 2) {
                 walls.tightenWall(leftWallTightPosition, rightWallTightPosition);
-                intake.setIntakePower(1.0);  // roll 3rd ball up
-                sleep(1500);
-                //intake.setIntakePower(0.0);
+                sleep(1000);
                 ballCount++;
             }
 
@@ -250,9 +254,8 @@ public abstract class AutoDrive extends LinearOpMode {
 
         // Reset everything
         intake.setIntakePower(0.0);
-
-        gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
         walls.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
+        gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
         launch.stopLaunch();
     }
 

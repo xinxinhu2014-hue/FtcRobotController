@@ -37,7 +37,7 @@ public class RobotOrientDrive extends OpMode {
             rollerUpWaitTime = 0.0, shootPauseWaitTime = 0.0, wheelRecoverTimeOut = 1.5, wallLoosenWaitTime = 0.0;
     double leftGateClosePosition = 0.21, rightGateClosePosition = 0.34,
             leftGateOpenPosition = 0.75, rightGateOpenPosition = 0.62,
-            leftWallLoosePosition = 0.86, rightWallLoosePosition = 0.82,
+            leftWallLoosePosition = 0.88, rightWallLoosePosition = 0.84,
             leftWallTightPosition = 0.0, rightWallTightPosition = 0.04;
     double RpmAdjustBallTwo = 0, RpmAdjustBallThree = 0, wheelRecoverTimeLimitBallTwo = 1.5, wheelRecoverTimeLimitBallThree = 3.0;
 
@@ -66,7 +66,7 @@ public class RobotOrientDrive extends OpMode {
     @Override
     public void loop() {
         // use gamepad sticks to control driving
-        double forward = gamepad1.left_stick_y;
+        double forward = -gamepad1.left_stick_y;
         double right = gamepad1.left_stick_x;
         double rotate = gamepad1.right_stick_x;
         forward = dead(forward);

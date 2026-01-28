@@ -29,7 +29,7 @@ public abstract class AutoDrive extends LinearOpMode {
     protected boolean towardRight = true;
     protected double leftGateClosePosition = 0.21, rightGateClosePosition = 0.34,
             leftGateOpenPosition = 0.75, rightGateOpenPosition = 0.62,
-            leftWallLoosePosition = 0.86, rightWallLoosePosition = 0.82,
+            leftWallLoosePosition = 0.88, rightWallLoosePosition = 0.84,
             leftWallTightPosition = 0.0, rightWallTightPosition = 0.04;
 
     @Override
@@ -55,7 +55,7 @@ public abstract class AutoDrive extends LinearOpMode {
     //  Shared drive helper methods
     // =========================================================
 
-    protected void driveForwardInchesVel(double inches, double baseRPM, double targetDeg, double timeoutSec) {
+    protected void driveForwardInchesVel(double inches, double baseRPM, double targetDeg, double leftAdjusst, double timeoutSec) {
         double baseVelTps = drive.forwardRunToTargetPosition(inches, baseRPM); // set target position and get base velocity in TPS ready
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
@@ -119,11 +119,11 @@ public abstract class AutoDrive extends LinearOpMode {
     // Intake 3 balls
     // ==========================================================
 
-    protected void intaking(double inches, double baseRPM, double targetDeg, double timeoutSec,  long intakeTime) {
+    protected void intaking(double inches, double basePct, double targetDeg, double timeoutSec, long extraRunTime) {
         intake.setIntakePower(1.0);
         //walls.tightenWall(leftWallTightPosition , rightWallTightPosition); // test out position for tightening
-        driveForwardInchesVel(inches, baseRPM, targetDeg, timeoutSec);
-        //sleep(intakeTime);
+        straightInchesVel(inches, basePct, targetDeg, timeoutSec);
+        sleep(extraRunTime);
         intake.setIntakePower(0.0);
     }
 
@@ -132,8 +132,6 @@ public abstract class AutoDrive extends LinearOpMode {
     // =========================================================
 
     protected void shooting(double wheelTargetRpm, double ballTwoRpmAdjust, double ballThreeRpmAdjust) {
-        walls.tightenWall(leftWallTightPosition, rightWallTightPosition);
-
 
         final double TIMEOUT_SEC = 10.0;
         final double BOOST_ON = 250;
@@ -209,22 +207,22 @@ public abstract class AutoDrive extends LinearOpMode {
             // Ball 1: Open gate, pause
             if (ballCount == 0) {
                 gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
-                sleep(500);  // pause for ball out
+                sleep(300);  // pause for ball out
                 ballCount++;
 
 
                 // Adjust RPM for 2nd ball
                 wheelTargetRpm += ballTwoRpmAdjust;
                 tol = 0.05 * wheelTargetRpm;
-                //gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
+                gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
                 //launch.useVelocityControl(wheelTargetRpm);
             }
             // Ball 2: Open gate, roll down, close gate
             else if (ballCount == 1) {
                 //roll up to send ball 2 out, then pause
                 intake.setIntakePower(1.0);
-                //gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
-                sleep(500);
+                gates.openDoor(leftGateOpenPosition, rightGateOpenPosition);
+                sleep(800);
                 ballCount++;
 
                 // No RPM adjustment for 3rd ball (or adjust as needed)
@@ -258,5 +256,187 @@ public abstract class AutoDrive extends LinearOpMode {
         gates.closeDoor(leftGateClosePosition, rightGateClosePosition);
         launch.stopLaunch();
     }
+
+    protected void straightInchesVelSlowdown(
+            double inches,
+            double basePct,
+            double targetDeg,
+            double timeoutSec,
+            double fracBrake,
+            double minBrakeIn,
+            double maxBrakeIn
+    ) {
+        ElapsedTime timer = new ElapsedTime();
+        timer.reset();
+
+        drive.cancelDistanceMove();
+        drive.beginForwardDistanceInches(inches);
+
+        boolean done = false;
+
+        while (opModeIsActive() && timer.seconds() < timeoutSec) {
+            double currentYaw = robotYaw.getYaw();
+
+            done = drive.updateForwardDistanceHoldHeadingSlowdown(
+                    inches,
+                    targetDeg,
+                    currentYaw,
+                    basePct,
+                    0.12,
+                    fracBrake,
+                    minBrakeIn,
+                    maxBrakeIn
+            );
+
+            // --- debug telemetry (use one source of truth: avgTicks) ---
+            double avgTicks = drive.getAverageEncoderTicks();
+            double calcInches = avgTicks / 28.52;
+
+            telemetry.addData("t", "%.2f", timer.seconds());
+            telemetry.addData("done", done);
+            telemetry.addData("avgTicks", "%.0f", avgTicks);
+            telemetry.addData("calcIn", "%.2f", calcInches);
+            telemetry.addData("yawErr", "%.1f", targetDeg - currentYaw);
+            telemetry.update();
+
+            if (done) {
+                drive.stopDriveVelocity();   // << use velocity stop
+                break;
+            }
+
+            idle();
+        }
+
+        boolean timedOut = timer.seconds() >= timeoutSec;
+
+        // final telemetry
+        double avgTicks = drive.getAverageEncoderTicks();
+        double calcInches = avgTicks / 28.52;
+        telemetry.addData("EXIT", timedOut ? "TIMEOUT" : "DONE");
+        telemetry.addData("finalTicks", "%.0f", avgTicks);
+        telemetry.addData("finalCalcIn", "%.2f", calcInches);
+        telemetry.update();
+
+        // ✅ Only do anything extra if timed out (optional)
+        if (opModeIsActive() && timedOut) {
+            drive.stopDriveVelocity();
+        }
+
+        drive.cancelDistanceMove();
+        drive.runUsingEncoders();
+    }
+
+    protected void straightInchesVel(
+            double inches,
+            double basePct,
+            double targetDeg,
+            double timeoutSec
+    ) {
+        ElapsedTime timer = new ElapsedTime();
+        timer.reset();
+
+        drive.cancelDistanceMove();
+        drive.beginForwardDistanceInches(inches);
+
+        boolean done = false;
+
+        while (opModeIsActive() && timer.seconds() < timeoutSec) {
+            double currentYaw = robotYaw.getYaw();
+
+            done = drive.updateForwardDistanceHoldHeading(
+                    inches,
+                    targetDeg,
+                    currentYaw,
+                    basePct,
+                    0.12
+            );
+
+            // --- debug telemetry (use one source of truth: avgTicks) ---
+            double avgTicks = drive.getAverageEncoderTicks();
+            double calcInches = avgTicks / 28.52;
+
+            telemetry.addData("t", "%.2f", timer.seconds());
+            telemetry.addData("done", done);
+            telemetry.addData("avgTicks", "%.0f", avgTicks);
+            telemetry.addData("calcIn", "%.2f", calcInches);
+            telemetry.addData("yawErr", "%.1f", targetDeg - currentYaw);
+            telemetry.update();
+
+            if (done) {
+                drive.stopDriveVelocity();   // << use velocity stop
+                break;
+            }
+
+            idle();
+        }
+
+        boolean timedOut = timer.seconds() >= timeoutSec;
+
+        // final telemetry
+        double avgTicks = drive.getAverageEncoderTicks();
+        double calcInches = avgTicks / 28.52;
+        telemetry.addData("EXIT", timedOut ? "TIMEOUT" : "DONE");
+        telemetry.addData("finalTicks", "%.0f", avgTicks);
+        telemetry.addData("finalCalcIn", "%.2f", calcInches);
+        telemetry.update();
+
+        // ✅ Only do anything extra if timed out (optional)
+        if (opModeIsActive() && timedOut) {
+            drive.stopDriveVelocity();
+        }
+
+        drive.cancelDistanceMove();
+        drive.runUsingEncoders();
+    }
+
+
+    protected void strafeInchesVel(double inches, double basePct, double targetDeg,
+                                   double timeoutSec, boolean right) {
+
+        ElapsedTime timer = new ElapsedTime();
+        timer.reset();
+
+        drive.cancelDistanceMove();
+        drive.beginStrafeDistanceInches(inches);
+
+        boolean done = false;
+
+        while (opModeIsActive() && timer.seconds() < timeoutSec) {
+            double currentYaw = robotYaw.getYaw();
+
+            done = drive.updateStrafeDistanceHoldHeading(
+                    inches, right,
+                    targetDeg, currentYaw,
+                    basePct,
+                    0.12
+            );
+
+            double yawErr = targetDeg - currentYaw;
+            telemetry.addData("Mode", "Strafe OptionA " + (right ? "Right" : "Left"));
+            telemetry.addData("YawErr", "%.1f", yawErr);
+            telemetry.addData("Done", done);
+            telemetry.addData("t", "%.2f", timer.seconds());
+            telemetry.update();
+
+            if (done) {
+                drive.stopDriveVelocity();   // ✅ stop NOW
+                break;
+            }
+            idle();
+        }
+
+        boolean timedOut = timer.seconds() >= timeoutSec;
+
+        // ✅ Optional: only do extra stop logic on timeout
+        if (opModeIsActive() && timedOut) {
+            drive.stopDriveVelocity();
+        }
+
+        drive.cancelDistanceMove();
+        drive.runUsingEncoders();
+    }
+
+
+
 
 }

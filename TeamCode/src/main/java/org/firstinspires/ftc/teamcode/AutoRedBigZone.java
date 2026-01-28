@@ -65,6 +65,7 @@ public class AutoRedBigZone extends AutoDrive {
         turnToHeadingDeg(target + 87, 2.5, 0.4);
         sleep(20);
         intaking(55, 0.3, target + 87, 2.5, 1200);
+        loosenWall(0.85, 0.81);
         straightInchesVel(-20, 0.3, target + 87, 2.0);
 
         //target = robotYaw.getYaw();

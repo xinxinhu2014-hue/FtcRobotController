@@ -35,7 +35,7 @@ public class RobotOrientDrive extends OpMode {
     int ballCount = 0, isHere = 0;
     double inRangeTime = 0.0, outRangeTime = 0.0, firstInRangeTime = 0.0,
             rollerUpWaitTime = 0.0, shootPauseWaitTime = 0.0, wheelRecoverTimeOut = 1.5, wallLoosenWaitTime = 0.0;
-    double leftGateClosePosition = 0.21, rightGateClosePosition = 0.34,
+    double leftGateClosePosition = 0.20, rightGateClosePosition = 0.33,
             leftGateOpenPosition = 0.75, rightGateOpenPosition = 0.62,
             leftWallLoosePosition = 0.88, rightWallLoosePosition = 0.84,
             leftWallTightPosition = 0.0, rightWallTightPosition = 0.04;

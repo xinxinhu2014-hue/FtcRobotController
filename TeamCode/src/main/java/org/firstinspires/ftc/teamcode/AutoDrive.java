@@ -27,7 +27,7 @@ public abstract class AutoDrive extends LinearOpMode {
 
     // You can let each OpMode set this as needed
     protected boolean towardRight = true;
-    protected double leftGateClosePosition = 0.21, rightGateClosePosition = 0.34,
+    protected double leftGateClosePosition = 0.20, rightGateClosePosition = 0.33,
             leftGateOpenPosition = 0.75, rightGateOpenPosition = 0.62,
             leftWallLoosePosition = 0.88, rightWallLoosePosition = 0.84,
             leftWallTightPosition = 0.0, rightWallTightPosition = 0.04;
@@ -125,6 +125,10 @@ public abstract class AutoDrive extends LinearOpMode {
         straightInchesVel(inches, basePct, targetDeg, timeoutSec);
         sleep(extraRunTime);
         intake.setIntakePower(0.0);
+    }
+
+    protected void loosenWall(double leftWallLoosePosition, double rightWallLoosePosition){
+        walls.loosenWall(leftWallLoosePosition, rightWallLoosePosition);
     }
 
     // =========================================================

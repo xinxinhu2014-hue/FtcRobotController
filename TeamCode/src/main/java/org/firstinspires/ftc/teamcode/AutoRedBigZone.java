@@ -41,7 +41,7 @@ public class AutoRedBigZone extends AutoDrive {
         sleep(20);
 
 
-        shooting(3350.0, -200, 375);
+        shooting(3350.0, -150, 400);
         sleep(200);
 
         turnToHeadingDeg(target, 2.5, 0.4);
@@ -64,17 +64,9 @@ public class AutoRedBigZone extends AutoDrive {
         sleep(20);
         turnToHeadingDeg(target + 87, 2.5, 0.4);
         sleep(20);
-        intaking(55, 0.3, target + 87, 2.5, 1200);
-        loosenWall(0.85, 0.81);
+        intaking(48, 0.3, target + 87, 2.5, 500);
+        loosenWall(0.84, 0.80);
+        //gates.closeDoor(0.18, 0.31);
         straightInchesVel(-20, 0.3, target + 87, 2.0);
-
-        //target = robotYaw.getYaw();
-        //strafeInchesVel(26, 0.3, target, 2.5, true);
-        /*turnToHeadingDeg(90, 2.5, 0.3);
-        intaking(-30, drive.percentMaxRpm(0.3), -90, 2.5, 0.7);.
-        sleep(50);
-        driveForwardInchesVel(30, drive.percentMaxRpm(0.5), -90, 0.7, 2.5);
-        turnToHeadingDeg(125, 2.5, 0.3);*/
-        //drive.stopDrive();
     }
 }

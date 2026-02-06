@@ -376,6 +376,7 @@ public class RobotOrientDrive extends OpMode {
         telemetry.addData("Shooter", launching ? "ON" : "OFF");
         telemetry.addData("Target RPM", wheelTargetRpm);
         telemetry.addData("Current RPM", launchRpm);
+        telemetry.addData("Err: ", wheelTargetRpm-launchRpm);
         if(launching) {
             if(shootingType == 3){
                 telemetry.addLine("Far shot");
@@ -412,18 +413,18 @@ public class RobotOrientDrive extends OpMode {
             }
             telemetry.addData("Ball fired:  ", ballCount);
 
-            //
-            //telemetry.addData("First time in range in seconds of ", firstInRangeTime);
+
+            telemetry.addData("First time in range in seconds of ", firstInRangeTime);
             //telemetry.addData("In range in seconds of ", inRangeTime);
 
         }
-        telemetry.addData("ball ready ", isBallReady);
+        /*telemetry.addData("ball ready ", isBallReady);
         telemetry.addData("wheel edge ready ", wheelReadyEdge);
         telemetry.addData("wheel ready ", isWheelReady);
         telemetry.addData("last wheel ready ", lastWheelReady);
         telemetry.addData("multi shoot", isMultiBallShooting);
         telemetry.addData("single shoot", isSingleBallShooting);
-        telemetry.addData("trigger?", gamepad1.right_bumper);
+        telemetry.addData("trigger?", gamepad1.right_bumper);*/
         telemetry.addData("settle ", settleCount);
         telemetry.update();
     }

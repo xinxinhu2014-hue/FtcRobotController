@@ -41,7 +41,7 @@ public class AutoRedBigZone extends AutoDrive {
         sleep(20);
 
 
-        shooting(3350.0, -150, 400);
+        shooting(3350.0, 0, 0);
         sleep(200);
 
         turnToHeadingDeg(target, 2.5, 0.4);
@@ -50,12 +50,12 @@ public class AutoRedBigZone extends AutoDrive {
         sleep(20);
         turnToHeadingDeg(target + 87, 2.5, 0.4);
         sleep(20);
-        intaking(31, 0.3, target + 87, 2.5, 1000);
+        intaking(31, 0.3, target + 87, 2.5, 800);
         straightInchesVel(-35, 0.3, target + 87, 3.0);
         sleep(20);
         turnByDeg(-130, 2.0, 0.4);
 
-        shooting(3700.0, 0, 0);
+        shooting(3550.0, 0, 0);
         sleep(200);
 
         turnToHeadingDeg(target, 2.5, 0.4);
@@ -68,5 +68,6 @@ public class AutoRedBigZone extends AutoDrive {
         loosenWall(0.84, 0.80);
         //gates.closeDoor(0.18, 0.31);
         straightInchesVel(-20, 0.3, target + 87, 2.0);
+        sleep(2000);
     }
 }

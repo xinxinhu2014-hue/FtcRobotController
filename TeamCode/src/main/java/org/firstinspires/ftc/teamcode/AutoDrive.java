@@ -137,7 +137,7 @@ public abstract class AutoDrive extends LinearOpMode {
 
     protected void shooting(double wheelTargetRpm, double ballTwoRpmAdjust, double ballThreeRpmAdjust) {
 
-        final double TIMEOUT_SEC = 10.0;
+        final double TIMEOUT_SEC = 12.0;
         final double BOOST_ON = 250;
         final double BOOST_OFF = 120;
 
@@ -156,12 +156,12 @@ public abstract class AutoDrive extends LinearOpMode {
 
             telemetry.addData("Target RPM", wheelTargetRpm);
 
-            /*telemetry.addData("Actual RPM", "%.0f", launchRpm);
+            telemetry.addData("Actual RPM", "%.0f", launchRpm);
             if (launchRpmError < 0) {
                 telemetry.addData("Above target by", "%.0f", -launchRpmError);
             } else {
                 telemetry.addData("Below target by", "%.0f", launchRpmError);
-            }*/
+            }
             telemetry.update();
 
 
@@ -172,9 +172,9 @@ public abstract class AutoDrive extends LinearOpMode {
                     boosting = true;
                 }
                 sleep(20);
-                /*telemetry.addData("Actual RPM", "%.0f", launchRpm);
+                telemetry.addData("Actual RPM", "%.0f", launchRpm);
                 telemetry.addData("Below target by", "%.0f", launchRpmError);
-                telemetry.update();*/
+                telemetry.update();
                 continue;
             }
 
@@ -185,15 +185,15 @@ public abstract class AutoDrive extends LinearOpMode {
 
             if (Math.abs(launchRpmError) > tol) {
                 sleep(20);
-                //telemetry.addData("Actual RPM", "%.0f", launchRpm);
-                /*
+                telemetry.addData("Actual RPM", "%.0f", launchRpm);
+
                 if (launchRpmError < 0) {
                     telemetry.addData("Above target by", "%.0f", -launchRpmError);
                 } else {
                     telemetry.addData("Below target by", "%.0f", launchRpmError);
                 }
-                */
-                //telemetry.update();
+
+                telemetry.update();
                 continue;
             } else {
                 settleCount++;
@@ -238,7 +238,7 @@ public abstract class AutoDrive extends LinearOpMode {
             // Ball 3: Roll up and shoot
             else if (ballCount == 2) {
                 walls.tightenWall(leftWallTightPosition, rightWallTightPosition);
-                sleep(1000);
+                sleep(1500);
                 ballCount++;
             }
 

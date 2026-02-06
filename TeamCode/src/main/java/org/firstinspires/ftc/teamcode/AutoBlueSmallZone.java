@@ -16,14 +16,39 @@ public class AutoBlueSmallZone extends AutoDrive {
         if (isStopRequested()) return;
         robotYaw.resetYaw();
 
-        driveForwardInchesVel(3, drive.percentMaxRpm(0.25), 0.0, 1.0,2.0);
-        sleep(50);
-        turnByDeg(20, 2.0, 0.3);
-        sleep(50);
-        shooting(4400.0, 600, 400);
-        turnToHeadingDeg(0.0, 2.0, 0.3);
-        sleep(50);
-        driveForwardInchesVel(24, drive.percentMaxRpm(0.5), 0.0, 1.0,2.0);
-        drive.stopDrive();
+        double target = robotYaw.getYaw();  // capture once
+
+        straightInchesVel(-3, 0.1, target, 2.0);
+        sleep(20);
+        turnByDeg(19, 2.0, 0.2);
+        shooting(4250.0, 300, 0);
+        sleep(200);
+
+        turnByDeg(-19, 2.0, 0.4);
+        sleep(20);
+        straightInchesVel(-22, 0.3, target+5, 2.0);
+        sleep(20);
+        turnByDeg(-90, 2.0, 0.4);
+        sleep(20);
+        intaking(44, 0.3, target - 85, 2.5, 500);
+
+        straightInchesVel(-45, 0.3, target - 87, 2.0);
+        sleep(20);
+        turnByDeg(90, 2.0, 0.4);
+        straightInchesVel(22, 0.3, target, 2.0);
+        sleep(20);
+        turnByDeg(19, 2.0, 0.4);
+        shooting(4400.0, 0, 0);
+        sleep(200);
+
+        //turnByDeg(20, 2.0, 0.4);
+        //sleep(20);
+        straightInchesVel(-45, 0.4, target+5, 2.0);
+        sleep(20);
+        turnByDeg(90, 2.0, 0.4);
+        sleep(20);
+        intaking(42, 0.3, target - 87, 2.5, 100);
+        straightInchesVel(-10, 0.3, target - 87, 2.0);
+        sleep(2500);
     }
 }

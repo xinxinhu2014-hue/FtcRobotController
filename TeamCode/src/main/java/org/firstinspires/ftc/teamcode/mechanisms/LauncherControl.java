@@ -3,30 +3,36 @@ package org.firstinspires.ftc.teamcode.mechanisms;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 public class LauncherControl {
 
 
-    private static final double TICKS_PER_REV = 28; // = 7 * 4 for NeveRest 1:1 motor
-    private static final double GEAR_RATIO = 50.0/30.0; // Motor : Wheel = 50: 30
-    private static final double MAX_MOTOR_RPM = 6600; // for NeveRest 1:1 motor
+    private static final double TICKS_PER_REV = 28.0; // = 7 * 4 for NeveRest 1:1 motor
+    private static final double GEAR_RATIO = 1.0; // motor to wheel
+    private static final double MAX_MOTOR_RPM = 6600.0; // for NeveRest 1:1 motor
     private static final double MAX_WHEEL_RPM = MAX_MOTOR_RPM * GEAR_RATIO;
-    private static final double MIN_WHEEL_RPM = 2000; // test out when shooting in shortest range
-    private static final double kP = 3.0; // test out
-    private static final double kI = 0.3; // test out
-    private static final double kD = 0.0; // test out
-    private static final double kF = 32767 / (MAX_MOTOR_RPM * TICKS_PER_REV / 60);
-    private DcMotorEx launchMotor;
+    private static final double MIN_WHEEL_RPM = 2000.0; // test out when shooting in shortest range
+    private static final double kP = 0.02; // test out
+    private static final double kI = 0.0; // test out
+    private static final double kD = 0.2; // test out
+    private static final double kF = 32767.0 / (MAX_MOTOR_RPM * TICKS_PER_REV / 60.0);
+    private DcMotorEx[] launchMotors = new DcMotorEx[2];
+    private VoltageSensor batteryVoltageSensor;
+
 
 
 
     public void init(HardwareMap hardwareMap){
-        launchMotor = hardwareMap.get(DcMotorEx.class, "shooter");
-        launchMotor.setDirection(DcMotor.Direction.FORWARD);
-        launchMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        launchMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        launchMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        launchMotor.setVelocityPIDFCoefficients(kP, kI, kD, kF);
+        launchMotors[0] = hardwareMap.get(DcMotorEx.class, "FrontLaunch");
+        launchMotors[1] = hardwareMap.get(DcMotorEx.class, "BackLaunch");
+        batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
+        for (int i = 0; i <2; i++)  {
+            launchMotors[i].setDirection(DcMotor.Direction.REVERSE);
+            launchMotors[i].setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            launchMotors[i].setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            launchMotors[i].setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        }
     }
 
     double rpmToTicksPerSec(double rpm) { return rpm * TICKS_PER_REV / 60; }
@@ -34,18 +40,57 @@ public class LauncherControl {
 
     // Read wheel RPM from current motor velocity
     public double currentWheelRpm() {
-        double motorTps = launchMotor.getVelocity();                   // motor tps
+        double motorTps = (launchMotors[0].getVelocity() + launchMotors[1].getVelocity()) / 2;  // motor tps
         return ticksPerSecToRpm(motorTps) * GEAR_RATIO;                // wheel rpm
     }
 
     public void stopLaunch() {
-        launchMotor.setVelocity(0);
+        for(int i = 0; i < 2; i++) {
+            launchMotors[i].setPower(0.0);
+        }
     }
 
-    public void startLaunch(double desiredWheelRpm) {
+    private double getBatteryVoltage() {
+        double v = batteryVoltageSensor.getVoltage();
+        return Math.max(v, 11.0); // safety clamp
+    }
+
+    public void boostLaunch(double power) {
+        for (int i = 0; i < 2; i++) {
+            if (launchMotors[i].getMode() != DcMotor.RunMode.RUN_WITHOUT_ENCODER) {
+                launchMotors[i].setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            }
+            launchMotors[i].setPower(power);
+        }
+    }
+
+
+    public void useVelocityControl(double desiredWheelRpm) {
         double wheelRpm = Math.min(MAX_WHEEL_RPM, Math.max(MIN_WHEEL_RPM, desiredWheelRpm));
         double motorRpm = wheelRpm / GEAR_RATIO;
-        launchMotor.setVelocity(rpmToTicksPerSec(motorRpm));
+        double voltage = getBatteryVoltage();
+        double kFscale, kPadjust = 0.0;
+        if (wheelRpm >4200) {
+            kFscale = 1.208;          // extra push only for very high RPM
+            kPadjust = 0.15;
+        } else if (wheelRpm > 3600) {
+            kFscale = 1.16;          // extra push only for very high RPM
+            kPadjust = 0.1;
+        } else if (wheelRpm > 3200) {
+            kFscale = 1.145;
+            kPadjust = 0.08;
+        } else {
+            kFscale = 1.045;
+            kPadjust = 0.04;
+        }
+        double compensatedKF = kF * kFscale;
+        for (int i = 0; i < 2; i++) {
+            if (launchMotors[i].getMode() != DcMotor.RunMode.RUN_USING_ENCODER) {
+                launchMotors[i].setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            }
+            launchMotors[i].setVelocityPIDFCoefficients(kP + kPadjust, kI, kD, compensatedKF);
+            launchMotors[i].setVelocity(rpmToTicksPerSec(motorRpm));
+        }
     }
 
     public double adjustLaunchRpm(double currentWheelRpm, double rpmChange) {

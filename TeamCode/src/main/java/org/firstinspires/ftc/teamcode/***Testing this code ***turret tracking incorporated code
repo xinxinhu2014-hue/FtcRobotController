@@ -1,0 +1,422 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+import org.firstinspires.ftc.teamcode.mechanisms.MecanumDrive;
+import org.firstinspires.ftc.teamcode.mechanisms.PushBar;
+import org.firstinspires.ftc.teamcode.mechanisms.IntakeControl;
+
+@TeleOp(name = "Webcam AprilTag Targeting", group = "Competition")
+public class WebcamAprilTagTargeting extends OpMode {
+    
+    MecanumDrive drive = new MecanumDrive();
+    PushBar bar = new PushBar();
+    IntakeControl intake = new IntakeControl();
+    
+    private DcMotorEx shooterMotor;
+    private boolean launching = false;
+    private double wheelTargetRpm = 0.0;
+    private double launchRpm;
+    private boolean shooterReady = false;
+    
+    private AprilTagProcessor aprilTag;
+    private VisionPortal visionPortal;
+    private boolean autoTargetEnabled = false;
+    private boolean lastX = false;
+    private boolean targetLocked = false;
+    
+    // Alliance management
+    private boolean redAlliance = true;
+    private boolean lastY = false;
+    
+    // Define AprilTag IDs for FTC 2023-2024 season (adjust for your season)
+    private static final int[] RED_ALLIANCE_TAGS = {1, 2, 3, 4};
+    private static final int[] BLUE_ALLIANCE_TAGS = {5, 6, 7, 8};
+    
+    private double targetDistance = 0.0;
+    private double targetYaw = 0.0;
+    private double targetX = 0.0;
+    private int targetId = -1;
+    private String targetAlliance = "NONE";
+    
+    // Control states
+    private boolean lastDpadUp = false;
+    private boolean lastDpadDown = false;
+    private boolean lastRightBumper = false;
+    private final double wheelRpmAdjustment = 100.0;
+    private boolean barExtended = false;
+    
+    // RPM Control parameters
+    private final double rpmTolerance = 70.0;
+    private final double maxOvershootLimit = 100.0;
+    
+    // Alignment gains
+    private static final double TURN_GAIN = 0.025;
+    private static final double STRAFE_GAIN = 0.02;
+    private static final double DRIVE_GAIN = 0.015;
+    
+    private static final double TOLERANCE_YAW = 2.0;
+    private static final double TOLERANCE_X = 1.5;
+    private static final double TOLERANCE_DISTANCE = 2.0;
+    
+    private static final double OPTIMAL_SHOOTING_DISTANCE = 36.0;
+    private static final double SHOOTER_TICKS_PER_REV = 537.6;
+    private static final double SHOOTER_MAX_RPM = 312.5;
+    private static final double MAX_SAFE_RPM = SHOOTER_MAX_RPM * 0.95;
+    
+    private static final double kF = 32767.0 / (SHOOTER_MAX_RPM * SHOOTER_TICKS_PER_REV / 60.0);
+    private static final double kP = 0.10 * kF;
+    private static final double kI = 0.0;
+    private static final double kD = 0.0;
+
+    @Override
+    public void init() {
+        drive.init(hardwareMap);
+        bar.init(hardwareMap);
+        intake.init(hardwareMap);
+        
+        // Initialize shooter motor with PIDF velocity control
+        shooterMotor = hardwareMap.get(DcMotorEx.class, "shooter");
+        shooterMotor.setDirection(DcMotorEx.Direction.FORWARD);
+        shooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+        shooterMotor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        shooterMotor.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        
+        PIDFCoefficients coefficients = new PIDFCoefficients(kP, kI, kD, kF);
+        shooterMotor.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, coefficients);
+            
+        // Initialize AprilTag processor for STANDARD WEBCAM
+        aprilTag = new AprilTagProcessor.Builder()
+            .setDrawAxes(true)
+            .setDrawCubeProjection(true)
+            .setDrawTagOutline(true)
+            .setTagFamily(AprilTagProcessor.TagFamily.TAG_36h11)
+            .setTagLibrary(AprilTagProcessor.TagLibrary.CURRENT)
+            .build();
+            
+        // Initialize VisionPortal with LOGITECH WEBCAM (not Limelight)
+        visionPortal = new VisionPortal.Builder()
+            .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1")) // Your webcam name here
+            .addProcessor(aprilTag)
+            .setCameraResolution(new Size(640, 480))
+            .setStreamFormat(VisionPortal.StreamFormat.YUY2)
+            .build();
+        
+        // Bulk caching optimization
+        for (LynxModule hub : hardwareMap.getAll(LynxModule.class)) {
+            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
+        }
+
+        telemetry.addData("Status", "Initialized - Webcam AprilTag Targeting");
+        telemetry.addData("Vision System", "Logitech Webcam + AprilTag");
+        telemetry.addData("Current Alliance", redAlliance ? "RED" : "BLUE");
+        telemetry.addData("Max Safe RPM", "%.0f", MAX_SAFE_RPM);
+        telemetry.update();
+    }
+    
+    @Override
+    public void start() {
+        bar.pushBall(0.65, 1.0);
+    }
+    
+    private double dead(double v) {
+        return Math.abs(v) < 0.05 ? 0.0 : v;
+    }
+    
+    private double rpmToTicksPerSec(double rpm) {
+        return (rpm * SHOOTER_TICKS_PER_REV) / 60.0;
+    }
+    
+    private double ticksPerSecToRPM(double tps) {
+        return (tps * 60.0) / SHOOTER_TICKS_PER_REV;
+    }
+    
+    private void manageShooterRPM() {
+        if (launching && shooterMotor != null) {
+            launchRpm = ticksPerSecToRPM(shooterMotor.getVelocity());
+            shooterReady = Math.abs(launchRpm - wheelTargetRpm) <= rpmTolerance;
+            
+            if (launchRpm > wheelTargetRpm + maxOvershootLimit) {
+                double correctedVelocity = rpmToTicksPerSec(wheelTargetRpm - 50);
+                shooterMotor.setVelocity(correctedVelocity);
+            }
+            
+            if (launchRpm > MAX_SAFE_RPM) {
+                shooterMotor.setVelocity(rpmToTicksPerSec(MAX_SAFE_RPM));
+            }
+        }
+    }
+    
+    private void setShooterRPM(double targetRPM) {
+        if (targetRPM > MAX_SAFE_RPM) {
+            targetRPM = MAX_SAFE_RPM;
+        }
+        
+        wheelTargetRpm = targetRPM;
+        double targetTicksPerSec = rpmToTicksPerSec(wheelTargetRpm);
+        shooterMotor.setVelocity(targetTicksPerSec);
+        launching = true;
+        shooterReady = false;
+    }
+    
+    // Check if a tag ID belongs to the current alliance
+    private boolean isTagInCurrentAlliance(int tagId) {
+        if (redAlliance) {
+            for (int redTag : RED_ALLIANCE_TAGS) {
+                if (tagId == redTag) return true;
+            }
+        } else {
+            for (int blueTag : BLUE_ALLIANCE_TAGS) {
+                if (tagId == blueTag) return true;
+            }
+        }
+        return false;
+    }
+    
+    // Get alliance name from tag ID
+    private String getAllianceFromTagId(int tagId) {
+        for (int redTag : RED_ALLIANCE_TAGS) {
+            if (tagId == redTag) return "RED";
+        }
+        for (int blueTag : BLUE_ALLIANCE_TAGS) {
+            if (tagId == blueTag) return "BLUE";
+        }
+        return "UNKNOWN";
+    }
+    
+    private double calculateRpmFromDistance(double distanceInches) {
+        double baseRpm = 2500.0;
+        double distanceFactor = 25.0;
+        return Math.min(MAX_SAFE_RPM, baseRpm + (distanceInches * distanceFactor));
+    }
+    
+    private boolean acquireAndAlignToTarget() {
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        if (detections.isEmpty()) {
+            targetLocked = false;
+            targetAlliance = "NONE";
+            return false;
+        }
+        
+        AprilTagDetection bestTarget = null;
+        double bestScore = Double.MAX_VALUE;
+        
+        for (AprilTagDetection detection : detections) {
+            if (detection.metadata != null && detection.ftcPose != null) {
+                // ONLY consider tags from the current alliance
+                if (!isTagInCurrentAlliance(detection.id)) {
+                    continue;
+                }
+                
+                double distanceScore = Math.abs(detection.ftcPose.range - OPTIMAL_SHOOTING_DISTANCE);
+                double alignmentScore = Math.abs(detection.ftcPose.x) + Math.abs(detection.ftcPose.yaw);
+                double totalScore = distanceScore * 0.7 + alignmentScore * 0.3;
+                
+                if (totalScore < bestScore) {
+                    bestScore = totalScore;
+                    bestTarget = detection;
+                }
+            }
+        }
+        
+        if (bestTarget != null) {
+            targetDistance = bestTarget.ftcPose.range;
+            targetYaw = bestTarget.ftcPose.yaw;
+            targetX = bestTarget.ftcPose.x;
+            targetId = bestTarget.id;
+            targetAlliance = getAllianceFromTagId(targetId);
+            
+            double errorYaw = -targetYaw;
+            double errorX = -targetX;
+            double errorDistance = OPTIMAL_SHOOTING_DISTANCE - targetDistance;
+            
+            boolean perfectlyAligned = Math.abs(errorYaw) < TOLERANCE_YAW && 
+                                     Math.abs(errorX) < TOLERANCE_X && 
+                                     Math.abs(errorDistance) < TOLERANCE_DISTANCE;
+            
+            if (perfectlyAligned) {
+                targetLocked = true;
+                drive.drive(0, 0, 0);
+                
+                double optimalRpm = calculateRpmFromDistance(targetDistance);
+                if (!launching || Math.abs(wheelTargetRpm - optimalRpm) > 50) {
+                    setShooterRPM(optimalRpm);
+                }
+                
+                manageShooterRPM();
+                
+            } else {
+                targetLocked = false;
+                double turnPower = errorYaw * TURN_GAIN;
+                double strafePower = errorX * STRAFE_GAIN;
+                double drivePower = errorDistance * DRIVE_GAIN;
+                
+                // Apply deadband
+                turnPower = Math.abs(turnPower) < 0.05 ? 0 : turnPower;
+                strafePower = Math.abs(strafePower) < 0.05 ? 0 : strafePower;
+                drivePower = Math.abs(drivePower) < 0.05 ? 0 : drivePower;
+                
+                // Limit maximum correction power
+                double maxCorrection = 0.4;
+                turnPower = Math.max(-maxCorrection, Math.min(maxCorrection, turnPower));
+                strafePower = Math.max(-maxCorrection, Math.min(maxCorrection, strafePower));
+                drivePower = Math.max(-maxCorrection, Math.min(maxCorrection, drivePower));
+                
+                drive.drive(drivePower, strafePower, turnPower);
+            }
+            
+            return true;
+        }
+        
+        targetLocked = false;
+        targetAlliance = "NONE";
+        return false;
+    }
+
+    @Override
+    public void loop() {
+        // Alliance toggle with Y button
+        boolean currentY = gamepad1.y;
+        if (currentY && !lastY) {
+            redAlliance = !redAlliance;
+        }
+        lastY = currentY;
+
+        // Auto-targeting toggle with X button
+        boolean currentX = gamepad1.x;
+        if (currentX && !lastX) {
+            autoTargetEnabled = !autoTargetEnabled;
+            if (!autoTargetEnabled) {
+                shooterMotor.setVelocity(0);
+                launching = false;
+                shooterReady = false;
+                drive.drive(0, 0, 0); // Stop any auto-correction
+            }
+        }
+        lastX = currentX;
+        
+        if (!autoTargetEnabled) {
+            // ===================== MANUAL DRIVE CONTROL =====================
+            double forward = dead(-gamepad1.left_stick_y);
+            double right = dead(gamepad1.left_stick_x);
+            double rotate = dead(-gamepad1.right_stick_x);
+            drive.drive(forward, right, rotate);
+
+            // Push bar control
+            boolean rightBumper = gamepad1.right_bumper;
+            if (rightBumper && !lastRightBumper) {
+                barExtended = !barExtended;
+                if (barExtended) {
+                    bar.pushBall(0.55, 0.2);
+                } else {
+                    bar.release(0.65, 1.0);
+                }
+            }
+            lastRightBumper = rightBumper;
+
+            // Manual shooter control
+            manageShooterRPM();
+
+            // RPM adjustment
+            boolean dpadUp = gamepad1.dpad_up;
+            if (dpadUp && !lastDpadUp && launching) {
+                setShooterRPM(wheelTargetRpm + wheelRpmAdjustment);
+            }
+            lastDpadUp = dpadUp;
+
+            boolean dpadDown = gamepad1.dpad_down;
+            if (dpadDown && !lastDpadDown && launching) {
+                setShooterRPM(Math.max(1000, wheelTargetRpm - wheelRpmAdjustment));
+            }
+            lastDpadDown = dpadDown;
+
+            // Preset RPM buttons
+            if (gamepad1.a && !launching) {
+                setShooterRPM(3800.0);
+            }
+
+            if (gamepad1.b && !launching) {
+                setShooterRPM(3400.0);
+            }
+            
+        } else {
+            // ===================== AUTO-TARGETING MODE =====================
+            boolean targetAcquired = acquireAndAlignToTarget();
+            if (!targetAcquired) {
+                // Gentle rotation to help find target
+                drive.drive(0, 0, 0.1);
+            }
+            
+            // Manual push bar control still available in auto mode
+            if (gamepad1.right_bumper) {
+                bar.pushBall(0.55, 0.2);
+            }
+        }
+        
+        // Intake control (both modes)
+        if (gamepad1.left_bumper) {
+            intake.setIntakePower(-1.0);
+        } else {
+            intake.setIntakePower(gamepad1.left_trigger);
+        }
+        
+        // Update RPM reading
+        if (shooterMotor != null) {
+            launchRpm = ticksPerSecToRPM(shooterMotor.getVelocity());
+        }
+        
+        // ===================== TELEMETRY =====================
+        telemetry.addLine("=== VISION SYSTEM ===");
+        telemetry.addData("Camera", "Logitech Webcam");
+        telemetry.addData("Detection", "AprilTag");
+        telemetry.addData("Current Alliance", redAlliance ? "RED 🔴" : "BLUE 🔵");
+        telemetry.addData("Auto-Target", autoTargetEnabled ? "ACTIVE 🎯" : "MANUAL 🕹️");
+        
+        if (autoTargetEnabled) {
+            telemetry.addLine("=== TARGETING STATUS ===");
+            telemetry.addData("Target Lock", targetLocked ? "LOCKED 🔒" : "SEARCHING 🔍");
+            telemetry.addData("Detected Tag", "ID: %d (%s)", targetId, targetAlliance);
+            telemetry.addData("Distance", "%.1f inches", targetDistance);
+            telemetry.addData("Alignment", "Yaw: %.1f° | X: %.1f\"", targetYaw, targetX);
+        }
+        
+        telemetry.addLine("=== SHOOTER ===");
+        telemetry.addData("Status", launching ? (shooterReady ? "READY TO FIRE! 🎯" : "SPINNING UP...") : "STANDBY");
+        telemetry.addData("Target RPM", "%.0f", wheelTargetRpm);
+        telemetry.addData("Actual RPM", "%.0f", launchRpm);
+        
+        telemetry.addLine("=== CONTROLS ===");
+        telemetry.addData("Y", "Toggle Alliance");
+        telemetry.addData("X", "Toggle Auto-Target");
+        telemetry.addData("A/B", "Preset RPM");
+        telemetry.addData("D-Pad", "Adjust RPM");
+        telemetry.addData("RB", "Push Bar");
+        
+        if (targetLocked && shooterReady) {
+            telemetry.addLine("🎯 *** READY TO FIRE! *** 🎯");
+        }
+        
+        telemetry.update();
+    }
+    
+    @Override
+    public void stop() {
+        if (visionPortal != null) {
+            visionPortal.close();
+        }
+        if (shooterMotor != null) {
+            shooterMotor.setVelocity(0);
+        }
+        super.stop();
+    }
+}
